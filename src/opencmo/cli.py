@@ -108,9 +108,17 @@ async def _handle_status() -> str:
         seo = latest.get("seo")
         geo = latest.get("geo")
         comm = latest.get("community")
-        lines.append(f"  SEO: {f'score {seo[\"score\"]:.0%}, last {seo[\"scanned_at\"][:10]}' if seo and seo.get('score') is not None else ('last ' + seo['scanned_at'][:10] if seo else 'no data')}")
-        lines.append(f"  GEO: {f'score {geo[\"score\"]}/100, last {geo[\"scanned_at\"][:10]}' if geo else 'no data'}")
-        lines.append(f"  Community: {f'{comm[\"total_hits\"]} hits, last {comm[\"scanned_at\"][:10]}' if comm else 'no data'}")
+        if seo and seo.get("score") is not None:
+            seo_str = f"score {seo['score']:.0%}, last {seo['scanned_at'][:10]}"
+        elif seo:
+            seo_str = f"last {seo['scanned_at'][:10]}"
+        else:
+            seo_str = "no data"
+        geo_str = f"score {geo['score']}/100, last {geo['scanned_at'][:10]}" if geo else "no data"
+        comm_str = f"{comm['total_hits']} hits, last {comm['scanned_at'][:10]}" if comm else "no data"
+        lines.append(f"  SEO: {seo_str}")
+        lines.append(f"  GEO: {geo_str}")
+        lines.append(f"  Community: {comm_str}")
         lines.append("")
 
     return "\n".join(lines)
@@ -192,7 +200,7 @@ async def run_cli():
         input_items.append({"role": "user", "content": user_input})
 
         print("\nCMO is working...\n")
-        result = await Runner.run(cmo_agent, input_items)
+        result = await Runner.run(cmo_agent, input_items, max_turns=15)
 
         print(f"[{result.last_agent.name}]")
         print(result.final_output)
@@ -207,6 +215,13 @@ async def run_cli():
 
 def main():
     load_dotenv()
+
+    # Disable tracing for non-OpenAI providers (avoids 401 noise)
+    from opencmo.config import is_custom_provider
+    if is_custom_provider():
+        from agents import set_tracing_disabled
+        set_tracing_disabled(True)
+
     asyncio.run(run_cli())
 
 
