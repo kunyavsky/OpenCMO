@@ -53,3 +53,11 @@ export async function addCompetitor(
 export async function deleteCompetitor(competitorId: number): Promise<void> {
   await apiFetch(`/competitors/${competitorId}`, { method: "DELETE" });
 }
+
+export async function discoverCompetitors(
+  projectId: number,
+): Promise<{ competitors: { id: number; name: string; url: string | null; keywords: string[] }[] }> {
+  return apiJson(`/projects/${projectId}/discover-competitors`, {
+    method: "POST",
+  });
+}

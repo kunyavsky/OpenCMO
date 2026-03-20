@@ -400,6 +400,17 @@ async def api_v1_graph(project_id: int):
     return JSONResponse(data)
 
 
+@app.post("/api/v1/projects/{project_id}/discover-competitors")
+async def api_v1_discover_competitors(project_id: int):
+    """Use AI to discover and save competitors for a project."""
+    project = await storage.get_project(project_id)
+    if not project:
+        return JSONResponse({"error": "Not found"}, status_code=404)
+    from opencmo.service import discover_competitors
+    result = await discover_competitors(project_id)
+    return JSONResponse({"competitors": result})
+
+
 # ---------------------------------------------------------------------------
 # REST API v1 — Competitors
 # ---------------------------------------------------------------------------

@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { Plus, Trash2, X } from "lucide-react";
-import { useCompetitors, useAddCompetitor, useDeleteCompetitor } from "../../hooks/useGraphData";
+import { Plus, Trash2, X, Sparkles, Loader2 } from "lucide-react";
+import { useCompetitors, useAddCompetitor, useDeleteCompetitor, useDiscoverCompetitors } from "../../hooks/useGraphData";
 import { useI18n } from "../../i18n";
 
 export function CompetitorPanel({ projectId }: { projectId: number }) {
   const { data: competitors } = useCompetitors(projectId);
   const addComp = useAddCompetitor(projectId);
   const delComp = useDeleteCompetitor(projectId);
-  const { locale } = useI18n();
+  const discover = useDiscoverCompetitors(projectId);
+  const { t, locale } = useI18n();
   const isZh = locale === "zh";
 
-  const [open, setOpen] = useState(false);
+  const [showManual, setShowManual] = useState(false);
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [kwInput, setKwInput] = useState("");
@@ -28,7 +29,7 @@ export function CompetitorPanel({ projectId }: { projectId: number }) {
           setName("");
           setUrl("");
           setKwInput("");
-          setOpen(false);
+          setShowManual(false);
         },
       },
     );
@@ -40,17 +41,50 @@ export function CompetitorPanel({ projectId }: { projectId: number }) {
         <h3 className="text-sm font-semibold text-zinc-800">
           {isZh ? "竞品管理" : "Competitors"}
         </h3>
-        <button
-          onClick={() => setOpen(!open)}
-          className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-600 ring-1 ring-inset ring-indigo-200/50 transition-all hover:bg-indigo-100 active:scale-95"
-        >
-          {open ? <X size={12} /> : <Plus size={12} />}
-          {open ? (isZh ? "取消" : "Cancel") : (isZh ? "添加竞品" : "Add Competitor")}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* AI Discover — Primary action */}
+          <button
+            onClick={() => discover.mutate()}
+            disabled={discover.isPending}
+            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-all hover:from-violet-600 hover:to-indigo-600 active:scale-95 disabled:opacity-60"
+          >
+            {discover.isPending ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Sparkles size={12} />
+            )}
+            {discover.isPending
+              ? (isZh ? "AI 分析中..." : "Discovering...")
+              : (isZh ? "AI 智能发现" : "AI Discover")}
+          </button>
+          {/* Manual add — Secondary */}
+          <button
+            onClick={() => setShowManual(!showManual)}
+            className="flex items-center gap-1 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-xs font-medium text-zinc-500 ring-1 ring-inset ring-zinc-200/50 transition-all hover:bg-zinc-100 active:scale-95"
+          >
+            {showManual ? <X size={12} /> : <Plus size={12} />}
+            {isZh ? "手动添加" : "Manual"}
+          </button>
+        </div>
       </div>
 
-      {/* Add form */}
-      {open && (
+      {/* AI discovery result banner */}
+      {discover.isSuccess && (
+        <div className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700 ring-1 ring-emerald-200/60 animate-in fade-in slide-in-from-top-2 duration-300">
+          ✨ {isZh
+            ? `AI 发现了 ${discover.data?.competitors?.length ?? 0} 个竞品，已自动添加到图谱`
+            : `AI discovered ${discover.data?.competitors?.length ?? 0} competitors, auto-added to graph`}
+        </div>
+      )}
+
+      {discover.isError && (
+        <div className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 ring-1 ring-rose-200/60">
+          {isZh ? "AI 发现失败，请检查 API 配置后重试" : "Discovery failed. Check API settings and retry."}
+        </div>
+      )}
+
+      {/* Manual add form */}
+      {showManual && (
         <div className="mb-4 space-y-2 rounded-xl bg-zinc-50/80 p-3 ring-1 ring-zinc-100 animate-in fade-in slide-in-from-top-2 duration-200">
           <input
             value={name}
@@ -85,7 +119,9 @@ export function CompetitorPanel({ projectId }: { projectId: number }) {
       {/* Competitor list */}
       {!competitors?.length ? (
         <p className="text-xs text-zinc-400">
-          {isZh ? "暂无竞品。添加竞品后图谱将显示竞品节点。" : "No competitors yet. Add competitors to see them in the graph."}
+          {isZh
+            ? "暂无竞品。点击「AI 智能发现」让 AI 自动分析并添加竞品。"
+            : "No competitors yet. Click 'AI Discover' to let AI find and add competitors automatically."}
         </p>
       ) : (
         <div className="space-y-1.5">

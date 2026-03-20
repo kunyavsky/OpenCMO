@@ -274,8 +274,10 @@ async def analyze_url_with_ai(url: str, on_progress=None, locale: str = "en") ->
                     f"Based on the discussion, produce the final monitoring strategy as JSON:\n"
                     f'{{"brand_name": "the actual product name",'
                     f' "category": "one-word category (devtools/saas/ai/marketing/analytics/ecommerce/...)",'
-                    f' "keywords": ["5-8 monitoring keywords covering brand name, product category, competitor terms, and user search queries"]}}'
-                ),
+                    f' "keywords": ["5-8 monitoring keywords covering brand name, product category, competitor terms, and user search queries"],'
+                    f' "competitors": [{{"name": "competitor product/brand name", "url": "their website URL or empty string", "keywords": ["2-4 keywords that competitor ranks for"]}}]}}'
+                    f'\nProvide 3-5 real competitors in the same market space. Only include actual known products/brands, not generic terms.'
+                )
             },
         ])
         emit("strategy_director", final_text, 3)
@@ -294,6 +296,7 @@ async def analyze_url_with_ai(url: str, on_progress=None, locale: str = "en") ->
             "brand_name": str(data.get("brand_name", "")).strip(),
             "category": str(data.get("category", "")).strip(),
             "keywords": [str(k).strip() for k in data.get("keywords", []) if k],
+            "competitors": data.get("competitors", []),
         }
     except Exception:
         logger.exception("AI analysis failed for %s", url)
@@ -324,3 +327,113 @@ async def analyze_and_enrich_project(project_id: int, url: str, on_progress=None
                 await storage.add_tracked_keyword(project_id, kw)
             except Exception:
                 pass
+
+    # Auto-save discovered competitors
+    for comp in analysis.get("competitors", []):
+        try:
+            name = str(comp.get("name", "")).strip()
+            if not name:
+                continue
+            comp_id = await storage.add_competitor(
+                project_id,
+                name,
+                url=str(comp.get("url", "")).strip() or None,
+            )
+            for ckw in comp.get("keywords", []):
+                ckw = str(ckw).strip()
+                if ckw:
+                    await storage.add_competitor_keyword(comp_id, ckw)
+            logger.info("Auto-discovered competitor: %s for project %d", name, project_id)
+        except Exception:
+            logger.debug("Failed to save competitor %s", comp, exc_info=True)
+
+
+async def discover_competitors(project_id: int, on_progress=None) -> list[dict]:
+    """Use AI to discover competitors for an existing project.
+
+    Returns list of {name, url, keywords} dicts.
+    """
+    project = await storage.get_project(project_id)
+    if not project:
+        return []
+
+    emit = on_progress or (lambda *a: None)
+    brand = project["brand_name"]
+    category = project["category"]
+    url = project["url"]
+
+    # Gather existing keywords for context
+    keywords_list = await storage.list_tracked_keywords(project_id)
+    kw_text = ", ".join(k["keyword"] for k in keywords_list) if keywords_list else "N/A"
+
+    try:
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(
+            api_key=os.environ.get("OPENAI_API_KEY"),
+            base_url=os.environ.get("OPENAI_BASE_URL") or None,
+        )
+        model = os.environ.get("OPENCMO_MODEL_DEFAULT", "gpt-4o")
+
+        emit("system", f"Discovering competitors for {brand}...", 0)
+
+        result_text = await _llm_call(client, model, [
+            {
+                "role": "system",
+                "content": (
+                    "You are a competitive intelligence analyst. Given a brand/product, "
+                    "identify its real competitors in the market. Return ONLY valid JSON array, "
+                    "no markdown fences, no extra text."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Brand: {brand}\n"
+                    f"URL: {url}\n"
+                    f"Category: {category}\n"
+                    f"Current tracked keywords: {kw_text}\n\n"
+                    f"Find 3-6 real competitors for this product. For each competitor, provide:\n"
+                    f'[{{"name": "competitor name", "url": "website URL", '
+                    f'"keywords": ["3-5 keywords this competitor is known for or ranks for"]}}]\n'
+                    f"Only include actual known products/brands that compete in the same space. "
+                    f"Do NOT include generic terms or the brand itself."
+                ),
+            },
+        ])
+
+        # Parse JSON
+        text = result_text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[-1]
+        if text.endswith("```"):
+            text = text.rsplit("```", 1)[0]
+        text = text.strip()
+
+        competitors = json.loads(text)
+        if not isinstance(competitors, list):
+            competitors = []
+
+        # Save to DB
+        saved = []
+        for comp in competitors:
+            name = str(comp.get("name", "")).strip()
+            if not name:
+                continue
+            comp_url = str(comp.get("url", "")).strip() or None
+            comp_id = await storage.add_competitor(project_id, name, url=comp_url)
+            comp_kws = []
+            for ckw in comp.get("keywords", []):
+                ckw = str(ckw).strip()
+                if ckw:
+                    await storage.add_competitor_keyword(comp_id, ckw)
+                    comp_kws.append(ckw)
+            saved.append({"id": comp_id, "name": name, "url": comp_url, "keywords": comp_kws})
+            logger.info("AI discovered competitor: %s", name)
+
+        emit("system", f"Found {len(saved)} competitors.", 1)
+        return saved
+
+    except Exception:
+        logger.exception("Competitor discovery failed for project %d", project_id)
+        return []
