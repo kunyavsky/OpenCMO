@@ -42,6 +42,13 @@ Una moderna React SPA con diseno glassmorphism, construida para maxima claridad 
   <p><i>Dashboard de Proyectos en Tiempo Real — Monitorea SEO, GEO (Visibilidad IA), rankings SERP y engagement comunitario de un vistazo.</i></p>
 </div>
 
+<div align="center">
+  <a href="https://www.bilibili.com/video/BV1T5AMzoEKV/">
+    <img src="https://img.shields.io/badge/Video_Demo-Bilibili-00A1D6?style=for-the-badge&logo=bilibili&logoColor=white" alt="Ver demo en Bilibili" />
+  </a>
+  <p><i>Mira el video completo de demostracion para ver OpenCMO en accion.</i></p>
+</div>
+
 ---
 
 ## Grafo de Conocimiento Interactivo
