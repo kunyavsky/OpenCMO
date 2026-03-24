@@ -5,9 +5,13 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from agents import function_tool
+
+if TYPE_CHECKING:
+    from tavily import AsyncTavilyClient
 
 logger = logging.getLogger(__name__)
 
@@ -156,6 +160,16 @@ class DataForSeoProvider(SerpProvider):
 class TavilySerpProvider(SerpProvider):
     name = "tavily"
 
+    def __init__(self) -> None:
+        self._client: AsyncTavilyClient | None = None
+
+    def _get_client(self) -> AsyncTavilyClient:
+        if self._client is None:
+            from tavily import AsyncTavilyClient as _AsyncTavilyClient
+
+            self._client = _AsyncTavilyClient()
+        return self._client
+
     @property
     def is_enabled(self) -> bool:
         import os
@@ -166,10 +180,8 @@ class TavilySerpProvider(SerpProvider):
         self, keyword: str, target_domain: str, num_results: int = 20
     ) -> SerpResult:
         try:
-            from tavily import TavilyClient
-
-            client = TavilyClient()
-            response = client.search(query=keyword, max_results=num_results)
+            client = self._get_client()
+            response = await client.search(query=keyword, max_results=num_results)
             results = response.get("results", [])
 
             target = target_domain.lower().removeprefix("www.")
