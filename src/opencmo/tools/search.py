@@ -14,6 +14,9 @@ else:
     from agents import function_tool
 
     if os.environ.get("TAVILY_API_KEY"):
+        from tavily import AsyncTavilyClient
+
+        _tavily_client = AsyncTavilyClient()
 
         @function_tool
         async def web_search(query: str) -> str:
@@ -23,10 +26,7 @@ else:
                 query: The search query string.
             """
             try:
-                from tavily import TavilyClient
-
-                client = TavilyClient()
-                response = client.search(query=query, max_results=5, search_depth="basic")
+                response = await _tavily_client.search(query=query, max_results=5, search_depth="basic")
                 results = response.get("results", [])
                 if not results:
                     return "No search results found."
