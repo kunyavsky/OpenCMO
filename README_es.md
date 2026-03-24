@@ -327,6 +327,8 @@ npm run build   # Build de produccion
 
 - [study8677](https://github.com/study8677) - Creador y mantenedor de OpenCMO
 - [ParakhJaggi](https://github.com/ParakhJaggi) - Contribuciones de integracion Tavily mediante [#2](https://github.com/study8677/OpenCMO/pull/2) y [#3](https://github.com/study8677/OpenCMO/pull/3)
+- Ver [CONTRIBUTORS.md](CONTRIBUTORS.md) para el registro mantenido de creditos
+- Ver [CONTRIBUTING.md](CONTRIBUTING.md) para el flujo de contribucion, expectativas de PR y guia de atribucion
 
 > El grafico predeterminado de Contributors de GitHub depende de la asociacion entre el email del autor del commit y la cuenta de GitHub. Si un PR se fusiona con commits firmados con un email no vinculado a la cuenta del colaborador, ese trabajo puede no aparecer en el grafico aunque la contribucion sea real.
 

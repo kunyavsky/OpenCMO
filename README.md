@@ -327,6 +327,8 @@ npm run build   # Production build
 
 - [study8677](https://github.com/study8677) - Creator and maintainer of OpenCMO
 - [ParakhJaggi](https://github.com/ParakhJaggi) - Tavily integration contributions via [#2](https://github.com/study8677/OpenCMO/pull/2) and [#3](https://github.com/study8677/OpenCMO/pull/3)
+- See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the maintained credit roster
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution workflow, PR expectations, and attribution guidance
 
 > GitHub's default Contributors graph is based on commit author email mapping. If a PR is merged with commits authored from an email that is not linked to the contributor's GitHub account, the graph may not attribute that work even though the contribution is real.
 

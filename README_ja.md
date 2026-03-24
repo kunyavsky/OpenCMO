@@ -326,6 +326,8 @@ npm run build   # プロダクションビルド
 
 - [study8677](https://github.com/study8677) - OpenCMO の作成者兼メンテナ
 - [ParakhJaggi](https://github.com/ParakhJaggi) - [#2](https://github.com/study8677/OpenCMO/pull/2) と [#3](https://github.com/study8677/OpenCMO/pull/3) による Tavily 統合の貢献
+- 継続的に管理する貢献者一覧は [CONTRIBUTORS.md](CONTRIBUTORS.md) を参照
+- 貢献フロー、PR の期待事項、クレジットの扱いは [CONTRIBUTING.md](CONTRIBUTING.md) を参照
 
 > GitHub の既定の Contributors グラフは、commit author のメールアドレスが GitHub アカウントに紐付いているかどうかで集計されます。紐付いていないメールアドレスで作成されたコミットがマージされた場合、実際に貢献していても既定のグラフには表示されないことがあります。
 
