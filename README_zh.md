@@ -328,6 +328,8 @@ npm run build   # 生产构建
 
 - [study8677](https://github.com/study8677) - OpenCMO 的创建者与维护者
 - [ParakhJaggi](https://github.com/ParakhJaggi) - 通过 [#2](https://github.com/study8677/OpenCMO/pull/2) 和 [#3](https://github.com/study8677/OpenCMO/pull/3) 提交 Tavily 集成相关贡献
+- 查看 [CONTRIBUTORS.md](CONTRIBUTORS.md) 获取维护中的贡献者名录
+- 查看 [CONTRIBUTING.md](CONTRIBUTING.md) 获取贡献流程、PR 要求与署名说明
 
 > GitHub 默认的 Contributors 图谱依赖 commit author 邮箱和 GitHub 账号的映射关系。如果合并进主分支的提交使用了未绑定到该账号的邮箱，默认图谱里可能不会显示该贡献者，但这并不影响其真实贡献事实。
 
