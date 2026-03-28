@@ -299,6 +299,14 @@ export const en = {
   "graph.pausingHint": "Finishing current operation...",
   "graph.resetConfirm": "Reset clears depth tracking. All discovered data stays in the graph but depth info will be lost.",
   "graph.noFrontier": "No more nodes to explore.",
+
+  // Setup Banner
+  "setup.title": "Configure API Keys to Get Started",
+  "setup.description": "OpenCMO requires API keys to power AI features like content generation, SEO analysis, and web search. Configure them in Settings.",
+  "setup.llmKey": "LLM API Key (OpenAI / DeepSeek)",
+  "setup.tavilyKey": "Tavily Search Key",
+  "setup.configureNow": "Go to Settings",
+  "setup.dismissHint": "Dismiss for this session",
 } as const;
 
 export type TranslationKey = keyof typeof en;

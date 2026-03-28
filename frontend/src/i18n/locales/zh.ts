@@ -301,4 +301,12 @@ export const zh: Record<TranslationKey, string> = {
   "graph.pausingHint": "正在完成当前操作...",
   "graph.resetConfirm": "重置将清除深度追踪信息。已发现的数据将保留在图谱中，但深度信息将丢失。",
   "graph.noFrontier": "没有更多节点可探索。",
+
+  // Setup Banner
+  "setup.title": "请先配置 API 密钥",
+  "setup.description": "OpenCMO 需要 API 密钥来驱动 AI 功能（内容生成、SEO 分析、网络搜索等）。请在设置中配置您自己的密钥。",
+  "setup.llmKey": "大模型 API Key（OpenAI / DeepSeek）",
+  "setup.tavilyKey": "Tavily 搜索 Key",
+  "setup.configureNow": "前往设置",
+  "setup.dismissHint": "本次不再提醒",
 };

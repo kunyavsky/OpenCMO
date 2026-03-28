@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { useProjects, useDeleteProject } from "../hooks/useProjects";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
@@ -6,6 +7,8 @@ import { ErrorAlert } from "../components/common/ErrorAlert";
 import { ProjectCard } from "../components/dashboard/ProjectCard";
 import { GlobalOverview } from "../components/dashboard/GlobalOverview";
 import { InsightBanner } from "../components/dashboard/InsightBanner";
+import { SetupBanner } from "../components/dashboard/SetupBanner";
+import { SettingsDialog } from "../components/settings/SettingsDialog";
 import { useI18n } from "../i18n";
 import { Plus } from "lucide-react";
 
@@ -13,6 +16,7 @@ export function DashboardPage() {
   const { data: projects, isLoading, error } = useProjects();
   const deleteProject = useDeleteProject();
   const { t } = useI18n();
+  const [showSettings, setShowSettings] = useState(false);
   const deleteError =
     deleteProject.error instanceof Error
       ? deleteProject.error.message
@@ -38,6 +42,7 @@ export function DashboardPage() {
           {t("dashboard.newMonitor")}
         </Link>
       </div>
+      <SetupBanner onOpenSettings={() => setShowSettings(true)} />
       {deleteError ? <div className="mb-6"><ErrorAlert message={deleteError} /></div> : null}
       <InsightBanner />
       <GlobalOverview />
@@ -66,6 +71,8 @@ export function DashboardPage() {
           ))}
         </div>
       )}
+      {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
+
