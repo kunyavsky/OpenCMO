@@ -177,7 +177,7 @@ async def api_v1_chat(request: Request):
     from opencmo.context import resolve_chat_project, build_project_context
     project_id = await resolve_chat_project(body)
     if project_id:
-        ctx = await build_project_context(project_id, depth="brief")
+        ctx = await build_project_context(project_id, depth="full")
         if ctx:
             input_items.insert(0, {"role": "system", "content": f"[Project Context]\n{ctx}"})
             context_item = input_items[0]

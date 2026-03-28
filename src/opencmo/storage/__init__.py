@@ -71,6 +71,7 @@ from opencmo.storage.scan_runs import (
     add_scan_run_step,
     replace_scan_artifacts,
     get_task_findings,
+    get_task_findings_by_project,
     get_task_recommendations,
     get_latest_monitoring_summary,
 )
@@ -223,7 +224,8 @@ __all__ = [
     # scan_runs
     "create_scan_run", "list_scan_runs_by_monitor", "update_scan_run",
     "add_scan_run_step", "replace_scan_artifacts",
-    "get_task_findings", "get_task_recommendations", "get_latest_monitoring_summary",
+    "get_task_findings", "get_task_findings_by_project",
+    "get_task_recommendations", "get_latest_monitoring_summary",
     # chat
     "create_chat_session", "list_chat_sessions", "get_chat_session",
     "update_chat_session", "delete_chat_session", "clear_chat_sessions",

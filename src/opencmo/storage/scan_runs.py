@@ -188,6 +188,34 @@ async def get_task_findings(task_id: str) -> list[dict]:
         await db.close()
 
 
+async def get_task_findings_by_project(project_id: int, limit: int = 6) -> list[dict]:
+    """Return most recent findings for a project (across all scan runs)."""
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """SELECT f.domain, f.severity, f.title, f.summary
+               FROM scan_findings f
+               JOIN scan_runs r ON r.id = f.run_id
+               WHERE r.project_id = ?
+               ORDER BY r.id DESC,
+                 CASE f.severity
+                   WHEN 'critical' THEN 0
+                   WHEN 'warning' THEN 1
+                   ELSE 2
+                 END,
+                 f.id
+               LIMIT ?""",
+            (project_id, limit),
+        )
+        rows = await cursor.fetchall()
+        return [
+            {"domain": row[0], "severity": row[1], "title": row[2], "summary": row[3]}
+            for row in rows
+        ]
+    finally:
+        await db.close()
+
+
 async def get_task_recommendations(task_id: str) -> list[dict]:
     """Return persisted recommendations for a monitoring task."""
     db = await get_db()
