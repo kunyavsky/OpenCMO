@@ -35,6 +35,12 @@ async def build_project_context(project_id: int, depth: str = "brief") -> str:
     frontier = [n for n in nodes if not n.get("explored", True) and n.get("depth", 0) > 0]
 
     parts = [f"# {project['brand_name']} ({project['category']})"]
+    parts.append(f"URL: {project['url']}")
+
+    # Always include keyword list — agents need concrete terms
+    if keywords:
+        kw_labels = [n["label"] for n in keywords[:15]]
+        parts.append(f"Keywords: {', '.join(kw_labels)}")
 
     if depth == "brief":
         parts.append(
@@ -58,7 +64,36 @@ async def build_project_context(project_id: int, depth: str = "brief") -> str:
         if geo and geo.get("score") is not None:
             parts.append(f"GEO: {geo['score']}/100")
     else:
-        # Full competitive landscape
+        # ---- Latest scan scores ----
+        latest = await storage.get_latest_scans(project_id)
+        seo = latest.get("seo")
+        geo = latest.get("geo")
+        community = latest.get("community")
+        serp_data = latest.get("serp", [])
+        score_parts = []
+        if seo and seo.get("score") is not None:
+            score_parts.append(f"SEO {seo['score']}/100")
+        if geo and geo.get("score") is not None:
+            score_parts.append(f"GEO {geo['score']}/100")
+        if community:
+            score_parts.append(f"Community {community.get('total_hits', 0)} hits")
+        if serp_data:
+            top10 = sum(1 for s in serp_data if (s.get("position") or 999) <= 10)
+            score_parts.append(f"SERP {top10}/{len(serp_data)} in top 10")
+        if score_parts:
+            parts.append(f"Scores: {' | '.join(score_parts)}")
+
+        # ---- Latest findings (scan insights) ----
+        try:
+            findings_rows = await storage.get_task_findings_by_project(project_id, limit=6)
+        except Exception:
+            findings_rows = []
+        if findings_rows:
+            parts.append("\n## Recent Findings")
+            for f in findings_rows:
+                parts.append(f"- [{f.get('severity', 'info')}] {f.get('title', '')}")
+
+        # ---- Full competitive landscape ----
         if competitors:
             parts.append("\n## Competitive Landscape")
             # Build competitor -> keywords mapping via links

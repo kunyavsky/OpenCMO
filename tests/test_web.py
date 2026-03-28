@@ -682,7 +682,7 @@ def test_api_v1_chat_uses_session_project_context(client):
             })
 
     assert resp.status_code == 200
-    mock_context.assert_awaited_once_with(pid, depth="brief")
+    mock_context.assert_awaited_once_with(pid, depth="full")
     input_items = mock_runner.call_args.args[1]
     assert input_items[0]["role"] == "system"
     assert "[Project Context]" in input_items[0]["content"]
