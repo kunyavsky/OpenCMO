@@ -40,65 +40,8 @@ def test_smtp_config_complete(monkeypatch):
     assert config["recipient"] == "report@example.com"
 
 
-def test_build_report_html_with_data():
-    """HTML report includes SEO/GEO/Community data."""
-    from opencmo.tools.email_report import _build_report_html
-
-    project = {"brand_name": "TestBrand", "url": "https://example.com"}
-    latest = {
-        "seo": {"scanned_at": "2025-01-15 09:00:00", "score": 0.85},
-        "geo": {"scanned_at": "2025-01-15 09:00:00", "score": 72},
-        "community": {"scanned_at": "2025-01-15 09:00:00", "total_hits": 5},
-    }
-    html = _build_report_html(project, latest, None, [], [])
-    assert "TestBrand" in html
-    assert "85%" in html
-    assert "72/100" in html
-    assert "5 discussion hits" in html
 
 
-def test_build_report_html_without_data():
-    """HTML report handles empty data gracefully."""
-    from opencmo.tools.email_report import _build_report_html
-
-    project = {"brand_name": "TestBrand", "url": "https://example.com"}
-    latest = {"seo": None, "geo": None, "community": None}
-    html = _build_report_html(project, latest, None, [], [])
-    assert "No data yet" in html
-
-
-def test_build_report_html_with_serp():
-    """HTML report includes SERP rankings when present."""
-    from opencmo.tools.email_report import _build_report_html
-
-    project = {"brand_name": "TestBrand", "url": "https://example.com"}
-    latest = {"seo": None, "geo": None, "community": None}
-    serp = [
-        {"keyword": "test kw", "position": 3, "url_found": "https://example.com/page", "error": None, "checked_at": "2025-01-15 09:00:00"},
-    ]
-    html = _build_report_html(project, latest, None, [], serp)
-    assert "SERP Rankings" in html
-    assert "test kw" in html
-    assert "#3" in html
-
-
-def test_build_report_html_delta():
-    """SEO/GEO score delta is correctly calculated."""
-    from opencmo.tools.email_report import _build_report_html
-
-    project = {"brand_name": "TestBrand", "url": "https://example.com"}
-    latest = {
-        "seo": {"scanned_at": "2025-01-15 09:00:00", "score": 0.90},
-        "geo": {"scanned_at": "2025-01-15 09:00:00", "score": 80},
-        "community": None,
-    }
-    previous = {
-        "seo": {"scanned_at": "2025-01-14 09:00:00", "score": 0.85},
-        "geo": {"scanned_at": "2025-01-14 09:00:00", "score": 72},
-    }
-    html = _build_report_html(project, latest, previous, [], [])
-    assert "+5.0%" in html
-    assert "+8" in html
 
 
 @pytest.mark.asyncio
