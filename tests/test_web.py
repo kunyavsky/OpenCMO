@@ -31,16 +31,8 @@ def client(tmp_path):
             yield test_client
 
 
-@pytest.fixture
-def auth_client(tmp_path):
-    """Client with OPENCMO_WEB_TOKEN set."""
-    db_path = tmp_path / "test.db"
-    with patch.object(storage, "_DB_PATH", db_path), \
-         patch.dict(os.environ, {"OPENCMO_WEB_TOKEN": "secret123"}):
-        asyncio.run(chat_sessions.clear_all())
-        task_registry.clear_all()
-        with TestClient(app) as test_client:
-            yield test_client
+
+
 
 
 def _seed_project(brand="Test", url="https://test.com"):
@@ -96,58 +88,21 @@ def test_api_endpoints(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Auth
+# Auth — auth middleware was removed in b78c9a7, routes are now fully open.
 # ---------------------------------------------------------------------------
 
 
-def test_api_v1_auth_required(auth_client):
-    resp = auth_client.get("/api/v1/projects")
-    assert resp.status_code == 401
-
-
-def test_api_v1_auth_with_bearer(auth_client):
-    resp = auth_client.get("/api/v1/projects", headers={"Authorization": "Bearer secret123"})
-    assert resp.status_code == 200
-
-
-def test_api_v1_auth_bypass_without_token(client):
-    """Without OPENCMO_WEB_TOKEN set, all routes are accessible."""
+def test_api_v1_routes_accessible_without_token(client):
+    """All API routes are accessible without any auth token."""
     resp = client.get("/api/v1/projects")
     assert resp.status_code == 200
 
 
-def test_api_v1_auth_covers_old_routes(auth_client):
-    """Token mode protects /project/* and /api/project/* too."""
-    resp = auth_client.get("/project/1")
-    assert resp.status_code == 401
-
-    resp = auth_client.get("/api/project/1/seo-data")
-    assert resp.status_code == 401
-
-
-def test_api_v1_auth_login(auth_client):
-    # Wrong token
-    resp = auth_client.post("/api/v1/auth/login", json={"token": "wrong"})
-    assert resp.status_code == 401
-
-    # Correct token
-    resp = auth_client.post("/api/v1/auth/login", json={"token": "secret123"})
-    assert resp.status_code == 200
-    assert "opencmo_token" in resp.cookies
-
-
-def test_api_v1_health_public(auth_client):
-    resp = auth_client.get("/api/v1/health")
+def test_api_v1_health_public(client):
+    resp = client.get("/api/v1/health")
     assert resp.status_code == 200
     assert resp.json()["ok"] is True
     assert "scheduler" in resp.json()
-
-
-def test_api_v1_auth_cookie(auth_client):
-    """After login, cookie should grant access."""
-    auth_client.post("/api/v1/auth/login", json={"token": "secret123"})
-    resp = auth_client.get("/api/v1/projects")
-    assert resp.status_code == 200
 
 
 # ---------------------------------------------------------------------------
