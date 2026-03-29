@@ -41,6 +41,8 @@ export const zh: Record<TranslationKey, string> = {
   // Project Tabs
   "project.overview": "概览",
   "project.reports": "报告",
+  "project.brandKit": "品牌套件",
+  "project.performance": "效果追踪",
   "project.seo": "SEO",
   "project.geo": "GEO",
   "project.serp": "SERP",
@@ -313,4 +315,97 @@ export const zh: Record<TranslationKey, string> = {
 
   // Settings
   "settings.localKeysHint": "您的 API 密钥仅保存在本地浏览器中，不会上传到服务器。",
+
+  // Dashboard — subtitle
+  "dashboard.subtitle": "您的 AI 营销活动概览",
+
+  // Welcome Hero (onboarding)
+  "welcome.title": "欢迎使用 OpenCMO",
+  "welcome.subtitle": "您的 AI 营销官从这里开始。粘贴一个 URL，即可获得完整的营销审计报告。",
+  "welcome.step1": "配置 API 密钥",
+  "welcome.step1Done": "API 密钥已配置",
+  "welcome.step2": "输入您的网站 URL 开始分析",
+  "welcome.featureSeo": "SEO 与性能审计",
+  "welcome.featureSeoDesc": "核心 Web 指标、站点健康度和技术 SEO 分析。",
+  "welcome.featureGeo": "AI 搜索可见度",
+  "welcome.featureGeoDesc": "查看 ChatGPT、Claude、Gemini、Perplexity 如何提及您的品牌。",
+  "welcome.featureCommunity": "社区监控",
+  "welcome.featureCommunityDesc": "追踪 Reddit、HN、Twitter 等平台的相关讨论。",
+
+  // Reports Page
+  "reports.title": "AI CMO 报告",
+  "reports.description": "战略报告深入分析项目定位、竞争优势与风险、市场环境变化。周报回顾最近 7 天的监控数据，总结关键变化、影响分析和下周行动计划。",
+  "reports.strategic": "战略报告",
+  "reports.strategicDesc": "基于项目背景、优劣势、竞品追踪和最新监控数据生成。这是项目当前状态的董事会级视图。",
+  "reports.regenerateStrategic": "重新生成战略报告",
+  "reports.weekly": "周报",
+  "reports.weeklyDesc": "基于最近七天的监控窗口生成。总结最大变化、数据置信度以及下周下游 Agent 的重点工作。",
+  "reports.regenerateWeekly": "重新生成周报",
+  "reports.humanReadout": "管理层报告",
+  "reports.humanReadoutTip": "面向管理层和团队的深度分析报告，包含完整的数据解读和战略建议。",
+  "reports.agentBrief": "Agent 简报",
+  "reports.agentBriefTip": "面向 AI Agent 的精简行动清单，用于驱动后续自动化任务。",
+  "reports.noReport": "尚未生成报告。",
+  "reports.lowSample": "样本量低",
+  "reports.sendEmail": "发送周报邮件",
+  "reports.sending": "发送中...",
+  "reports.strategicHistory": "战略报告历史",
+  "reports.weeklyHistory": "周报历史",
+  "reports.latest": "最新",
+
+  // Approvals Page
+  "approvals.title": "内容审批",
+  "approvals.subtitle": "在内容发布前，审核确切的发布内容。",
+  "approvals.pending": "待审批",
+  "approvals.empty": "审批队列为空",
+  "approvals.emptyDesc": "待审批的内容预览将显示在这里。",
+  "approvals.preview": "生成预览",
+  "approvals.channel": "渠道",
+  "approvals.target": "目标",
+  "approvals.targetUrl": "目标 URL",
+  "approvals.created": "创建时间",
+  "approvals.reject": "拒绝",
+  "approvals.approvePublish": "批准并发布",
+  "approvals.autopilot": "自动驾驶",
+  "approvals.aiReasoning": "AI 推理",
+  "approvals.autoPublishDisabled": "自动发布未启用",
+  "approvals.autoPublishHint": "要发布内容到外部平台（Reddit、Twitter 等），需要在设置中开启 OPENCMO_AUTO_PUBLISH。",
+  "approvals.goToSettings": "前往设置",
+
+  // Community Page — extra labels
+  "community.latestHits": "最新命中",
+  "community.avgEngagement": "平均互动度",
+  "community.platforms": "平台数",
+  "community.platformBreakdown": "平台分布",
+
+  // SERP Page — extra labels
+  "serp.avgPosition": "平均排名",
+  "serp.inTop3": "Top 3",
+  "serp.inTop10": "Top 10",
+  "serp.positionDistribution": "排名分布",
+
+  // GEO Page — extra labels
+  "geo.geoScore": "GEO 评分",
+  "geo.visibility": "可见度",
+  "geo.position": "位置",
+  "geo.sentiment": "情感",
+  "geo.latestSnapshot": "最新快照",
+
+  // Action Tips
+  "actionTip.seoExcellent": "SEO 性能优秀，继续保持！",
+  "actionTip.seoPoor": "网站性能严重偏低，建议优先优化 LCP 和 TBT。",
+  "actionTip.seoWarning": "性能有待提升，考虑优化图片和减少 JavaScript 体积。",
+  "actionTip.lcpSlow": "LCP 偏高（>4s），可能影响 Google 排名。",
+  "actionTip.clsHigh": "布局偏移过大，建议为图片和广告设置固定尺寸。",
+  "actionTip.geoExcellent": "AI 搜索可见度良好！",
+  "actionTip.geoPoor": "AI 搜索引擎几乎看不到您的品牌，查看报告获取改进建议。",
+  "actionTip.geoWarning": "AI 可见度偏低，可考虑在各平台建立品牌内容。",
+  "actionTip.serpNoKeywords": "还没有跟踪任何关键词，添加关键词来监控搜索排名。",
+  "actionTip.serpPoor": "大多数关键词排名靠后，查看报告获取 SEO 策略建议。",
+  "actionTip.serpGood": "{{count}} 个关键词进入 Top 3！🎉",
+  "actionTip.communityNone": "暂未发现社区讨论。AI 对话可以帮您制定社区推广策略。",
+  "actionTip.communityActive": "发现活跃社区讨论！可使用审批队列回复关键帖子。",
+
+  // Delete confirmation
+  "dashboard.deleteConfirm": "确定要删除该项目吗？",
 };

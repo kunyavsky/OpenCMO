@@ -1,15 +1,23 @@
 import { createContext, useState, useCallback, type ReactNode } from "react";
 import { en, type TranslationKey } from "./locales/en";
 import { zh } from "./locales/zh";
+import { ja } from "./locales/ja";
+import { ko } from "./locales/ko";
+import { es } from "./locales/es";
 
-export type Locale = "en" | "zh";
+export type Locale = "en" | "zh" | "ja" | "ko" | "es";
 
-const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, zh };
+const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, zh, ja, ko, es };
 
 function getInitialLocale(): Locale {
   const stored = localStorage.getItem("opencmo_lang");
-  if (stored === "en" || stored === "zh") return stored;
-  return navigator.language.startsWith("zh") ? "zh" : "en";
+  if (stored && stored in dictionaries) return stored as Locale;
+  const lang = navigator.language;
+  if (lang.startsWith("zh")) return "zh";
+  if (lang.startsWith("ja")) return "ja";
+  if (lang.startsWith("ko")) return "ko";
+  if (lang.startsWith("es")) return "es";
+  return "en";
 }
 
 export interface I18nContextValue {
