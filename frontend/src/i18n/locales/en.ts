@@ -39,6 +39,8 @@ export const en = {
   // Project Tabs
   "project.overview": "Overview",
   "project.reports": "Reports",
+  "project.brandKit": "Brand Kit",
+  "project.performance": "Performance",
   "project.seo": "SEO",
   "project.geo": "GEO",
   "project.serp": "SERP",
@@ -311,6 +313,99 @@ export const en = {
 
   // Settings
   "settings.localKeysHint": "Your API keys are stored locally in your browser — never sent to our server for storage.",
+
+  // Dashboard — subtitle
+  "dashboard.subtitle": "Overview of your AI marketing campaigns",
+
+  // Welcome Hero (onboarding)
+  "welcome.title": "Welcome to OpenCMO",
+  "welcome.subtitle": "Your AI-powered CMO starts here. Paste a URL and get a complete marketing audit.",
+  "welcome.step1": "Configure API Keys",
+  "welcome.step1Done": "API keys configured",
+  "welcome.step2": "Enter your website URL to begin",
+  "welcome.featureSeo": "SEO & Performance Audit",
+  "welcome.featureSeoDesc": "Core Web Vitals, site health, and technical SEO analysis.",
+  "welcome.featureGeo": "AI Search Visibility",
+  "welcome.featureGeoDesc": "See how ChatGPT, Claude, Gemini, and Perplexity mention your brand.",
+  "welcome.featureCommunity": "Community Monitoring",
+  "welcome.featureCommunityDesc": "Track discussions on Reddit, HN, Twitter, and more.",
+
+  // Reports Page
+  "reports.title": "AI CMO Reports",
+  "reports.description": "Strategic reports explain what the project is, where its moat and risks are, and how the market context is shifting. Weekly reports look back across the latest monitored data and summarize what changed, why it matters, and what agents should focus on next.",
+  "reports.strategic": "Strategic Report",
+  "reports.strategicDesc": "Generated from project context, current strengths and weaknesses, tracked competitors, and the latest monitoring evidence. This is the board-level view of where the project stands.",
+  "reports.regenerateStrategic": "Regenerate Strategic",
+  "reports.weekly": "Weekly Report",
+  "reports.weeklyDesc": "Generated from the latest seven-day monitoring window. It summarizes the biggest changes, the confidence level of the underlying samples, and the next week's focus for downstream agents.",
+  "reports.regenerateWeekly": "Regenerate Weekly",
+  "reports.humanReadout": "Human Readout",
+  "reports.humanReadoutTip": "In-depth analysis for executives and teams — complete data interpretation with strategic recommendations.",
+  "reports.agentBrief": "Agent Brief",
+  "reports.agentBriefTip": "Concise action list for AI agents — drives downstream automation tasks.",
+  "reports.noReport": "No report generated yet.",
+  "reports.lowSample": "Low Sample",
+  "reports.sendEmail": "Send Weekly Email",
+  "reports.sending": "Sending...",
+  "reports.strategicHistory": "Strategic History",
+  "reports.weeklyHistory": "Weekly History",
+  "reports.latest": "Latest",
+
+  // Approvals Page
+  "approvals.title": "Content Approvals",
+  "approvals.subtitle": "Review exact publish payloads before anything leaves OpenCMO.",
+  "approvals.pending": "pending",
+  "approvals.empty": "Approval queue is clear",
+  "approvals.emptyDesc": "Queued previews will appear here before anything gets published.",
+  "approvals.preview": "Generated Preview",
+  "approvals.channel": "Channel",
+  "approvals.target": "Target",
+  "approvals.targetUrl": "Target URL",
+  "approvals.created": "Created",
+  "approvals.reject": "Reject",
+  "approvals.approvePublish": "Approve & publish",
+  "approvals.autopilot": "Autopilot",
+  "approvals.aiReasoning": "AI Reasoning",
+  "approvals.autoPublishDisabled": "Auto-Publish is not enabled",
+  "approvals.autoPublishHint": "To publish content to external platforms (Reddit, Twitter, etc.), you need to enable OPENCMO_AUTO_PUBLISH in Settings.",
+  "approvals.goToSettings": "Go to Settings",
+
+  // Community Page — extra labels
+  "community.latestHits": "Latest Hits",
+  "community.avgEngagement": "Avg Engagement",
+  "community.platforms": "Platforms",
+  "community.platformBreakdown": "Platform Breakdown",
+
+  // SERP Page — extra labels
+  "serp.avgPosition": "Avg Position",
+  "serp.inTop3": "In Top 3",
+  "serp.inTop10": "In Top 10",
+  "serp.positionDistribution": "Position Distribution",
+
+  // GEO Page — extra labels
+  "geo.geoScore": "GEO Score",
+  "geo.visibility": "Visibility",
+  "geo.position": "Position",
+  "geo.sentiment": "Sentiment",
+  "geo.latestSnapshot": "Latest Snapshot",
+
+  // Action Tips
+  "actionTip.seoExcellent": "SEO performance is excellent — keep it up!",
+  "actionTip.seoPoor": "Site performance is critically low. Prioritize optimizing LCP and TBT.",
+  "actionTip.seoWarning": "Performance needs attention. Consider optimizing images and reducing JavaScript.",
+  "actionTip.lcpSlow": "LCP is high (>4s) — this may hurt Google rankings.",
+  "actionTip.clsHigh": "Layout shift is too high. Consider setting fixed dimensions for images and ads.",
+  "actionTip.geoExcellent": "AI search visibility is strong!",
+  "actionTip.geoPoor": "AI search engines can barely see your brand. Check reports for improvement suggestions.",
+  "actionTip.geoWarning": "AI visibility is low. Consider building brand content across platforms.",
+  "actionTip.serpNoKeywords": "No keywords tracked yet. Add keywords to monitor search rankings.",
+  "actionTip.serpPoor": "Most keywords rank low. Check reports for SEO strategy recommendations.",
+  "actionTip.serpGood": "{{count}} keywords in the Top 3! 🎉",
+  "actionTip.communityNone": "No community discussions found yet. AI Chat can help you plan a community outreach strategy.",
+  "actionTip.communityActive": "Active discussions found! Consider using the Approval Queue to respond to key posts.",
+
+  // Delete confirmation
+  "dashboard.deleteConfirm": "Are you sure you want to delete this project?",
 } as const;
 
 export type TranslationKey = keyof typeof en;
