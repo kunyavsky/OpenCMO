@@ -37,3 +37,38 @@ async def test_worker_claims_and_completes_executor_task(tmp_path, monkeypatch):
     updated = await bg_service.get_task(task["task_id"])
     assert updated["status"] == "completed"
     assert updated["result"]["ok"] is True
+
+
+@pytest.mark.asyncio
+async def test_worker_stop_cancels_inflight_executor(tmp_path, monkeypatch):
+    from opencmo import storage
+
+    db_path = tmp_path / "test.db"
+    monkeypatch.setattr(storage, "_DB_PATH", db_path, raising=False)
+    await storage.ensure_db()
+    project_id = await storage.ensure_project("Stopping", "https://stopping.test", "saas")
+
+    await bg_service.enqueue_task(
+        kind="scan",
+        project_id=project_id,
+        payload={
+            "monitor_id": 77,
+            "project_id": project_id,
+            "job_type": "full",
+            "job_id": 77,
+        },
+        dedupe_key="scan:monitor:77",
+    )
+
+    started = asyncio.Event()
+
+    async def _executor(_ctx):
+        started.set()
+        await asyncio.Future()
+
+    worker = BackgroundWorker(poll_interval=0.01, stale_after_seconds=60)
+    worker.register_executor("scan", _executor)
+
+    await worker.start()
+    await asyncio.wait_for(started.wait(), timeout=1.0)
+    await asyncio.wait_for(worker.stop(), timeout=1.0)

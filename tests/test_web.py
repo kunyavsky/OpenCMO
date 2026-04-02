@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import sqlite3
+import time
 from unittest.mock import patch, AsyncMock, MagicMock
 
 import pytest
@@ -37,6 +38,18 @@ def client(tmp_path):
 
 def _seed_project(brand="Test", url="https://test.com"):
     return asyncio.run(storage.ensure_project(brand, url, "testing"))
+
+
+def _wait_for_report_task(client: TestClient, task_id: str, *, timeout_seconds: float = 10.0) -> dict:
+    deadline = time.time() + timeout_seconds
+    while time.time() < deadline:
+        resp = client.get(f"/api/v1/reports/tasks/{task_id}")
+        assert resp.status_code == 200
+        payload = resp.json()
+        if payload["status"] in {"completed", "failed"}:
+            return payload
+        time.sleep(0.1)
+    raise AssertionError(f"Report task {task_id} did not finish within {timeout_seconds} seconds")
 
 
 # ---------------------------------------------------------------------------
@@ -691,29 +704,33 @@ def test_api_v1_reports_lifecycle(client):
         strategic = client.post(f"/api/v1/projects/{pid}/reports/strategic/regenerate")
         assert strategic.status_code == 200
         assert strategic.json()["kind"] == "strategic"
+        strategic_task = _wait_for_report_task(client, strategic.json()["task_id"])
+        assert strategic_task["status"] == "completed"
 
         periodic = client.post(f"/api/v1/projects/{pid}/reports/periodic/regenerate")
         assert periodic.status_code == 200
         assert periodic.json()["kind"] == "periodic"
+        periodic_task = _wait_for_report_task(client, periodic.json()["task_id"])
+        assert periodic_task["status"] == "completed"
 
-    latest = client.get(f"/api/v1/projects/{pid}/reports/latest")
-    assert latest.status_code == 200
-    latest_payload = latest.json()
-    assert latest_payload["strategic"]["human"]["version"] == 1
-    assert latest_payload["periodic"]["agent"]["version"] == 1
+        latest = client.get(f"/api/v1/projects/{pid}/reports/latest")
+        assert latest.status_code == 200
+        latest_payload = latest.json()
+        assert latest_payload["strategic"]["human"]["version"] == 1
+        assert latest_payload["periodic"]["agent"]["version"] == 1
 
-    listed = client.get(f"/api/v1/projects/{pid}/reports")
-    assert listed.status_code == 200
-    assert len(listed.json()) == 4
+        listed = client.get(f"/api/v1/projects/{pid}/reports")
+        assert listed.status_code == 200
+        assert len(listed.json()) == 4
 
-    report_id = latest_payload["strategic"]["human"]["id"]
-    detail = client.get(f"/api/v1/reports/{report_id}")
-    assert detail.status_code == 200
-    assert detail.json()["kind"] == "strategic"
+        report_id = latest_payload["strategic"]["human"]["id"]
+        detail = client.get(f"/api/v1/reports/{report_id}")
+        assert detail.status_code == 200
+        assert detail.json()["kind"] == "strategic"
 
-    summary = client.get(f"/api/v1/projects/{pid}/summary")
-    assert summary.status_code == 200
-    assert summary.json()["latest_reports"]["strategic"]["human"]["id"] == report_id
+        summary = client.get(f"/api/v1/projects/{pid}/summary")
+        assert summary.status_code == 200
+        assert summary.json()["latest_reports"]["strategic"]["human"]["id"] == report_id
 
 
 # ---------------------------------------------------------------------------

@@ -67,6 +67,8 @@ class BackgroundWorker:
         await self._loop_task
         self._loop_task = None
         if self._running_tasks:
+            for task in list(self._running_tasks):
+                task.cancel()
             await asyncio.gather(*self._running_tasks, return_exceptions=True)
 
     async def _run_loop(self) -> None:
