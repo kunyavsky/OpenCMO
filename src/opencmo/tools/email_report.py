@@ -53,6 +53,8 @@ async def send_report_impl(project_id: int) -> dict:
 
         generated = await generate_periodic_report_bundle(project_id, source_run_id=None)
         report = generated["human"]
+    if report.get("generation_status") != "completed" or not (report.get("content_html") or report.get("content")):
+        return {"ok": False, "error": "Latest weekly report is unavailable"}
 
     html = report.get("content_html") or f"<pre>{report.get('content', '')}</pre>"
 

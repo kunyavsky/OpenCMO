@@ -13,6 +13,7 @@ from opencmo import storage
 from opencmo.storage._db import get_db
 
 router = APIRouter(prefix="/api/v1")
+_active_report_tasks: dict[str, tuple[int, asyncio.Task]] = {}
 
 
 @router.get("/projects/{project_id}/reports")
@@ -28,6 +29,13 @@ async def api_v1_latest_reports(project_id: int):
     project = await storage.get_project(project_id)
     if not project:
         return JSONResponse({"error": "Not found"}, status_code=404)
+    pending = [
+        task
+        for active_project_id, task in _active_report_tasks.values()
+        if active_project_id == project_id and not task.done()
+    ]
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
     return JSONResponse(await storage.get_latest_reports(project_id))
 
 
@@ -126,6 +134,8 @@ async def _run_report_in_background(task_id: str, project_id: int, kind: str) ->
         await _update_report_task(task_id, "completed", progress=progress_events)
     except Exception as exc:
         await _update_report_task(task_id, "failed", progress=progress_events, error=str(exc))
+    finally:
+        _active_report_tasks.pop(task_id, None)
 
 
 @router.post("/projects/{project_id}/reports/{kind}/regenerate")
@@ -135,9 +145,15 @@ async def api_v1_regenerate_report(project_id: int, kind: str):
         return JSONResponse({"error": "Not found"}, status_code=404)
 
     task_id = await _create_report_task(project_id, kind)
-    asyncio.get_event_loop().create_task(_run_report_in_background(task_id, project_id, kind))
+    task = asyncio.get_event_loop().create_task(_run_report_in_background(task_id, project_id, kind))
+    _active_report_tasks[task_id] = (project_id, task)
 
-    return JSONResponse({"task_id": task_id, "status": "pending"})
+    return JSONResponse({
+        "task_id": task_id,
+        "project_id": project_id,
+        "kind": kind,
+        "status": "pending",
+    })
 
 
 @router.get("/reports/tasks/{task_id}")

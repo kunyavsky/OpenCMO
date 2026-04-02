@@ -239,3 +239,25 @@ async def test_generate_report_uses_persisted_llm_settings(monkeypatch):
         }
     assert fake_create.await_count == 1
     assert all(call.kwargs["model"] == "provider-model" for call in fake_create.await_args_list)
+
+
+@pytest.mark.asyncio
+async def test_generate_report_marks_failed_when_all_generation_paths_fail():
+    project_id = await _seed_project()
+
+    with patch("opencmo.report_pipeline.run_deep_report_pipeline", new_callable=AsyncMock) as mock_pipeline, \
+         patch("opencmo.reports._generate_llm_markdown", new_callable=AsyncMock) as mock_llm:
+        mock_pipeline.side_effect = RuntimeError("Pipeline exploded")
+        mock_llm.side_effect = RuntimeError("LLM unavailable")
+
+        report = await service.regenerate_project_report(project_id, "strategic")
+
+    assert report["human"]["generation_status"] == "failed"
+    assert report["human"]["content"] == ""
+    assert report["human"]["content_html"] == ""
+    assert report["human"]["meta"]["used_pipeline"] is False
+    assert report["human"]["meta"]["used_fallback"] is False
+    assert "LLM unavailable" in str(report["human"]["meta"].get("llm_error"))
+
+    assert report["agent"]["generation_status"] == "failed"
+    assert report["agent"]["content"] == ""
