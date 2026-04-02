@@ -344,7 +344,7 @@ async def test_pipeline_fallback_on_error():
 
 @pytest.mark.asyncio
 async def test_pipeline_full_fallback_to_template():
-    """Verify that if both pipeline AND single-call fail, template is used."""
+    """Verify that if both pipeline AND single-call fail, the report is marked failed."""
     project_id = await _seed_project()
 
     with patch("opencmo.report_pipeline.run_deep_report_pipeline", new_callable=AsyncMock) as mock_pipeline, \
@@ -358,9 +358,28 @@ async def test_pipeline_full_fallback_to_template():
         result = await service.regenerate_project_report(project_id, "strategic")
 
     assert result["kind"] == "strategic"
-    assert result["human"]["meta"]["used_fallback"] is True
+    assert result["human"]["generation_status"] == "failed"
+    assert result["human"]["content"] == ""
+    assert result["human"]["content_html"] == ""
+    assert result["human"]["meta"]["used_fallback"] is False
     assert result["human"]["meta"]["used_pipeline"] is False
-    assert "AI CMO 战略报告" in result["human"]["content"]  # fallback template
+    assert "LLM is down" in result["human"]["meta"]["llm_error"]
+
+
+@pytest.mark.asyncio
+async def test_section_grading_failure_does_not_auto_pass():
+    from opencmo.report_pipeline import _phase_grade_section
+
+    with patch("opencmo.report_pipeline._llm_json_call", new_callable=AsyncMock) as mock_grade:
+        mock_grade.side_effect = RuntimeError("grader offline")
+        grade = await _phase_grade_section(
+            {"id": "sec-1", "title": "Section", "thesis": "Core thesis"},
+            "## Section\n\nContent",
+        )
+
+    assert grade["pass"] is False
+    assert grade["grading_unavailable"] is True
+    assert "grader offline" in grade["revision_instructions"]
 
 
 @pytest.mark.asyncio

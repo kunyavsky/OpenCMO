@@ -198,12 +198,26 @@ async def _reflect_one_dimension(facts: dict, dim: dict, meta: dict) -> dict:
     try:
         result = await _llm_json_call(system, user)
         if not isinstance(result, dict):
-            result = {"dimension": dim["id"], "quality_score": 50, "issues": [], "summary": str(result), "data_available": True}
+            raise ValueError("dimension auditor did not return a JSON object")
         result["dimension"] = dim["id"]
+        raw_score = result.get("quality_score")
+        result["quality_score"] = int(raw_score) if raw_score is not None else None
+        result["data_available"] = bool(result.get("data_available", bool(dim_data)))
+        result.setdefault("issues", [])
+        result.setdefault("anomalies", [])
+        result.setdefault("summary", "")
         return result
     except Exception as exc:
         logger.warning("[Phase 1] Dimension %s audit failed: %s", dim["id"], exc)
-        return {"dimension": dim["id"], "quality_score": 50, "issues": [str(exc)], "summary": "审计失败", "data_available": True}
+        return {
+            "dimension": dim["id"],
+            "quality_score": None,
+            "issues": [str(exc)],
+            "anomalies": [],
+            "summary": "审计失败",
+            "data_available": False,
+            "error": str(exc),
+        }
 
 
 async def _phase_reflect(facts: dict, meta: dict) -> dict:
@@ -221,7 +235,14 @@ async def _phase_reflect(facts: dict, meta: dict) -> dict:
     for i, result in enumerate(dim_results):
         if isinstance(result, Exception):
             logger.warning("[Phase 1] Dimension %s failed: %s", _DIMENSIONS[i]["id"], result)
-            dim_reports.append({"dimension": _DIMENSIONS[i]["id"], "quality_score": 50, "issues": [str(result)], "summary": "审计异常"})
+            dim_reports.append({
+                "dimension": _DIMENSIONS[i]["id"],
+                "quality_score": None,
+                "issues": [str(result)],
+                "anomalies": [],
+                "summary": "审计异常",
+                "data_available": False,
+            })
         else:
             dim_reports.append(result)
             logger.info("[Phase 1] Dimension %s — score: %s", result.get("dimension", "?"), result.get("quality_score", "?"))
@@ -237,21 +258,35 @@ async def _phase_reflect(facts: dict, meta: dict) -> dict:
     try:
         aggregated = await _llm_json_call(_REFLECT_AGG_SYSTEM, user)
         if not isinstance(aggregated, dict):
-            aggregated = {"data_quality_score": 50, "validated_summary": str(aggregated), "confidence_level": "medium"}
+            raise ValueError("aggregator did not return a JSON object")
+        numeric_scores = {
+            report["dimension"]: int(report["quality_score"])
+            for report in dim_reports
+            if report.get("quality_score") is not None
+        }
+        aggregated.setdefault("dimension_scores", numeric_scores)
         logger.info(
             "[Pipeline Phase 1] Aggregated quality: %s, confidence: %s",
             aggregated.get("data_quality_score", "?"), aggregated.get("confidence_level", "?"),
         )
         return aggregated
     except Exception as exc:
-        logger.warning("[Pipeline Phase 1] Aggregation failed: %s — using simple average", exc)
-        scores = [r.get("quality_score", 50) for r in dim_reports]
-        avg = sum(scores) // max(len(scores), 1)
+        logger.warning("[Pipeline Phase 1] Aggregation failed: %s — using available dimension scores only", exc)
+        numeric_scores = {
+            report["dimension"]: int(report["quality_score"])
+            for report in dim_reports
+            if report.get("quality_score") is not None
+        }
+        if not numeric_scores:
+            raise RuntimeError("No valid dimension quality scores available for aggregation") from exc
+        avg = sum(numeric_scores.values()) // len(numeric_scores)
         return {
             "data_quality_score": avg,
             "issues": [iss for r in dim_reports for iss in r.get("issues", [])],
+            "anomalies": [iss for r in dim_reports for iss in r.get("anomalies", [])],
             "validated_summary": f"各维度平均质量 {avg}/100（聚合失败，使用简单平均）",
             "confidence_level": "low",
+            "dimension_scores": numeric_scores,
         }
 
 
@@ -561,17 +596,26 @@ async def _phase_grade_section(section: dict, content: str) -> dict:
     try:
         result = await _llm_json_call(_GRADE_SECTION_SYSTEM, user)
         if not isinstance(result, dict):
-            result = {"average_score": 4.0, "pass": True, "revision_instructions": ""}
-        avg = result.get("average_score", 4.0)
+            raise ValueError("grader did not return a JSON object")
+        avg = result.get("average_score")
+        if avg is None:
+            raise ValueError("grader response missing average_score")
         result["pass"] = avg >= _GRADER_PASS_THRESHOLD
+        result["grading_unavailable"] = False
         logger.info(
             "[Pipeline Phase 5] Section %s score: %.1f — %s",
             section_id, avg, "PASS" if result["pass"] else "NEEDS REVISION",
         )
         return result
     except Exception as exc:
-        logger.warning("[Pipeline Phase 5] Grading failed for %s: %s — auto-pass", section_id, exc)
-        return {"average_score": 4.0, "pass": True, "revision_instructions": ""}
+        logger.warning("[Pipeline Phase 5] Grading failed for %s: %s", section_id, exc)
+        return {
+            "average_score": None,
+            "pass": False,
+            "grading_unavailable": True,
+            "revision_instructions": f"Section grading unavailable: {exc}",
+            "specific_fixes": [],
+        }
 
 
 _REVISE_SECTION_SYSTEM = """\
@@ -658,12 +702,7 @@ async def _summarize_one_section(section: dict, content: str) -> str:
         f"核心论点：{section.get('thesis', '?')}\n\n"
         f"== 章节内容 ==\n{content}"
     )
-    try:
-        return await _llm_text_call(_SUMMARIZE_SECTION_SYSTEM, user)
-    except Exception as exc:
-        logger.warning("[Phase 6] Summarize failed for %s: %s", section.get("id", "?"), exc)
-        # Return first 200 chars as fallback summary
-        return content[:200] + "..."
+    return await _llm_text_call(_SUMMARIZE_SECTION_SYSTEM, user)
 
 
 async def _phase_synthesize(
@@ -684,7 +723,9 @@ async def _phase_synthesize(
 
     section_summaries = []
     for i, (sec, _) in enumerate(section_contents):
-        summary = summaries[i] if not isinstance(summaries[i], Exception) else f"(摘要失败: {sec.get('title', '?')})"
+        if isinstance(summaries[i], Exception):
+            raise RuntimeError(f"Section summary failed for {sec.get('title', '?')}: {summaries[i]}") from summaries[i]
+        summary = summaries[i]
         section_summaries.append({"title": sec.get("title", "?"), "summary": summary})
 
     summaries_text = "\n\n".join(
@@ -715,16 +756,12 @@ async def _phase_synthesize(
         return_exceptions=True,
     )
 
-    # Handle failures gracefully
     if isinstance(exec_summary, Exception):
-        logger.warning("[Phase 6] Exec summary failed: %s", exec_summary)
-        exec_summary = "## 执行摘要\n\n（执行摘要生成失败，请查看各章节内容。）\n"
+        raise RuntimeError(f"Executive summary generation failed: {exec_summary}") from exec_summary
     if isinstance(intro, Exception):
-        logger.warning("[Phase 6] Intro failed: %s", intro)
-        intro = "## 引言\n\n（引言生成失败。）\n"
+        raise RuntimeError(f"Intro generation failed: {intro}") from intro
     if isinstance(strategy, Exception):
-        logger.warning("[Phase 6] Strategy failed: %s", strategy)
-        strategy = "## 战略建议与行动路线图\n\n（战略建议生成失败，请参考各章节分析。）\n"
+        raise RuntimeError(f"Strategy generation failed: {strategy}") from strategy
 
     # Step 3: Assemble final report (no LLM needed — just concatenation)
     logger.info("[Pipeline Phase 6.3] Assembling final report")
@@ -814,6 +851,10 @@ async def run_deep_report_pipeline(
 
         for attempt in range(_MAX_GRADER_RETRIES + 1):
             grade = await _phase_grade_section(section, content)
+            if grade.get("grading_unavailable", False):
+                raise RuntimeError(
+                    grade.get("revision_instructions", f"Section grading unavailable for {section_title}")
+                )
             if grade.get("pass", False):
                 _emit("grading", "completed", f"Section passed: {section_title}")
                 return section, content
@@ -863,4 +904,3 @@ async def run_deep_report_pipeline(
         len(final_report), len(completed_sections),
     )
     return final_report
-

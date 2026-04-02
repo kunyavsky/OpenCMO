@@ -492,117 +492,22 @@ async def _build_periodic_facts(
     return facts, meta
 
 
-def _fallback_markdown(kind: str, audience: str, facts: dict, meta: dict, previous_exists: bool) -> str:
-    project = facts["project"]
-    if kind == "strategic" and audience == "human":
-        strengths = facts.get("strengths") or ["当前有效信号仍有限，需要继续补齐 SEO/GEO/竞品基线。"]
-        risks = facts.get("risks") or ["暂无明确风险，但样本仍偏少。"]
-        recommendations = facts.get("recommendations") or []
-        lines = [
-            "# AI CMO 战略报告",
-            "",
-            "## 1. 执行摘要与项目定性",
-            f"- {project['brand_name']} 是一个 {project['category']} 项目，当前更适合被定义为“监控基础已建立，但增长叙事仍需强化”的阶段。",
-            "",
-            "## 2. 核心竞争力与优势护城河解析",
-            *[f"- {item}" for item in strengths[:4]],
-            "",
-            "## 3. 风险扫描与增长短板预警",
-            *[f"- {item}" for item in risks[:4]],
-            "",
-            "## 4. 竞品全景与流量抢占分析",
-        ]
-        competitors = facts.get("competitors") or []
-        if competitors:
-            lines.extend(
-                f"- 已记录竞品 {item['name']}，建议围绕其关键词和定位做差异化挖掘与布局。"
-                for item in competitors[:3]
-            )
-        else:
-            lines.append("- 当前竞品画像仍然稀薄，差异化判断的置信度有限。")
-        lines.extend(["", "## 5. 目标受众与社区舆论洞察"])
-        lines.append("- 目前需积累更多社区及社媒上的原生态提及，以完善真实用户画像与情绪洞察。")
-        lines.extend(["", "## 6. 下一阶段 CMO 战略规划与具体执行行动"])
-        if recommendations:
-            lines.extend(f"- {item['title']}：{item['summary']}" for item in recommendations[:4])
-        else:
-            lines.append("- 先补齐各个维度的监控基线，再进入明确无误的增长与执行阶段。")
-        return "\n".join(lines)
-
-    if kind == "strategic":
-        lines = [
-            "# Strategic Agent Brief",
-            "",
-            f"- objective: 提升 {project['brand_name']} 在 SEO、GEO 与竞品对位上的增长确定性",
-            "- constraints: 只基于已验证监控事实推进，不夸大趋势",
-            "- priority_directions:",
-        ]
-        directions = facts.get("recommendations") or []
-        if directions:
-            lines.extend(f"  - {item['title']}" for item in directions[:4])
-        else:
-            lines.append("  - 补齐监控样本")
-        lines.extend([
-            "- suggested_agents: SEO Agent, GEO Agent, Research Agent",
-            "- do_not: 不要把低样本信号写成确定趋势",
-        ])
-        return "\n".join(lines)
-
-    if kind == "periodic" and audience == "human":
-        lines = [
-            "# AI CMO 周报",
-            "",
-            "## 本周最重要的 3 个变化",
-        ]
-        changes = facts.get("top_changes") or ["本周暂无足够样本形成明确变化。"]
-        lines.extend(f"- {item}" for item in changes[:3])
-        lines.extend([
-            "",
-            "## SEO/GEO/SERP/Community 趋势摘要",
-            f"- {meta['facts_summary']}",
-            "",
-            "## 本周新增风险与亮点",
-        ])
-        findings = facts.get("findings") or []
-        if findings:
-            lines.extend(f"- {item['title']}：{item['summary']}" for item in findings[:4])
-        else:
-            lines.append("- 当前没有新增高置信度风险。")
-        lines.extend([
-            "",
-            "## 竞品/市场信号变化",
-            f"- 本周可用社区讨论 {len(facts.get('discussions') or [])} 条，审批动作 {len(facts.get('recent_approvals') or [])} 条。",
-            "",
-            "## 下周建议与关注点",
-        ])
-        recommendations = facts.get("recommendations") or []
-        if recommendations:
-            lines.extend(f"- {item['title']}：{item['summary']}" for item in recommendations[:4])
-        else:
-            lines.append("- 继续积累样本，再输出更强判断。")
-        if meta.get("low_sample"):
-            lines.insert(2, "- 样本稀疏，结论低置信度。")
-        return "\n".join(lines)
-
-    lines = [
-        "# Weekly Agent Brief",
-        "",
-        f"- project: {project['brand_name']}",
-        f"- sample_count: {meta['sample_count']}",
-        f"- low_sample: {str(meta.get('low_sample', False)).lower()}",
-        "- focus:",
-    ]
-    recommendations = facts.get("recommendations") or []
-    if recommendations:
-        lines.extend(f"  - {item['title']}" for item in recommendations[:4])
-    else:
-        lines.append("  - 继续采集更多稳定样本")
-    lines.extend([
-        "- guardrails:",
-        "  - 不要把缺失信号补写成趋势",
-        "  - 所有动作都要回到项目增长判断",
-    ])
-    return "\n".join(lines)
+def _failed_report_payload(meta: dict, model: str, *, used_pipeline: bool, llm_error: str, pipeline_error: str | None = None) -> dict:
+    record_meta = {
+        **meta,
+        "used_fallback": False,
+        "used_pipeline": used_pipeline,
+        "model": model,
+        "llm_error": llm_error,
+    }
+    if pipeline_error:
+        record_meta["pipeline_error"] = pipeline_error
+    return {
+        "generation_status": "failed",
+        "content": "",
+        "content_html": "",
+        "meta": record_meta,
+    }
 
 
 def _prompts(kind: str, audience: str, facts: dict, meta: dict, previous_exists: bool) -> tuple[str, str]:
@@ -737,9 +642,9 @@ async def _generate_report_record(
     previous_exists: bool,
     on_progress=None,
 ) -> dict:
-    used_fallback = False
     used_pipeline = False
     llm_error = None
+    pipeline_error = None
     model = await _get_report_model()
     content = ""
 
@@ -757,6 +662,7 @@ async def _generate_report_record(
             if not content.strip():
                 raise RuntimeError("Pipeline returned empty report.")
         except Exception as pipeline_exc:
+            pipeline_error = str(pipeline_exc) or pipeline_exc.__class__.__name__
             logger.warning(
                 "Deep pipeline failed for %s/%s, falling back to single-call: %s",
                 kind, audience, pipeline_exc,
@@ -768,10 +674,15 @@ async def _generate_report_record(
                 if not content.strip():
                     raise RuntimeError("LLM returned empty report content.")
             except Exception as exc:
-                used_fallback = True
                 llm_error = str(exc) or exc.__class__.__name__
-                logger.exception("Report generation fell back to template for %s/%s", kind, audience)
-                content = _fallback_markdown(kind, audience, facts, meta, previous_exists)
+                logger.exception("Report generation failed for %s/%s", kind, audience)
+                return _failed_report_payload(
+                    meta,
+                    model,
+                    used_pipeline=False,
+                    llm_error=llm_error,
+                    pipeline_error=pipeline_error,
+                )
     else:
         # Agent brief — single-call path
         system_prompt, user_prompt = _prompts(kind, audience, facts, meta, previous_exists)
@@ -780,19 +691,25 @@ async def _generate_report_record(
             if not content.strip():
                 raise RuntimeError("LLM returned empty report content.")
         except Exception as exc:
-            used_fallback = True
             llm_error = str(exc) or exc.__class__.__name__
-            logger.exception("Report generation fell back to template for %s/%s", kind, audience)
-            content = _fallback_markdown(kind, audience, facts, meta, previous_exists)
+            logger.exception("Report generation failed for %s/%s", kind, audience)
+            return _failed_report_payload(
+                meta,
+                model,
+                used_pipeline=False,
+                llm_error=llm_error,
+            )
 
     record_meta = {
         **meta,
-        "used_fallback": used_fallback,
+        "used_fallback": False,
         "used_pipeline": used_pipeline,
         "model": model,
     }
     if llm_error:
         record_meta["llm_error"] = llm_error
+    if pipeline_error:
+        record_meta["pipeline_error"] = pipeline_error
 
     return {
         "generation_status": "completed",

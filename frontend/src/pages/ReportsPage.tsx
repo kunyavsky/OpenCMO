@@ -28,6 +28,7 @@ function ReportCard({
   allowDownload,
   noReportText,
   lowSampleText,
+  failedReportText,
 }: {
   label: string;
   tooltip?: string;
@@ -36,9 +37,17 @@ function ReportCard({
   allowDownload?: boolean;
   noReportText: string;
   lowSampleText: string;
+  failedReportText: string;
 }) {
   const Icon = icon;
   const { t } = useI18n();
+  const isCompleted = Boolean(report && report.generation_status === "completed" && report.content.trim());
+  const failureReason =
+    typeof report?.meta?.llm_error === "string"
+      ? report.meta.llm_error
+      : typeof report?.meta?.pipeline_error === "string"
+        ? report.meta.pipeline_error
+        : null;
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-4">
@@ -66,12 +75,12 @@ function ReportCard({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {report?.meta?.low_sample ? (
+          {isCompleted && report?.meta?.low_sample ? (
             <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-700">
               {lowSampleText}
             </span>
           ) : null}
-          {allowDownload && report ? (
+          {allowDownload && isCompleted && report ? (
             <button
               type="button"
               onClick={() =>
@@ -90,9 +99,16 @@ function ReportCard({
         </div>
       </div>
 
-      {report ? (
+      {isCompleted && report ? (
         <div id={`report-content-${report.id}`} className="premium-report">
            <ReactMarkdown>{report.content}</ReactMarkdown>
+        </div>
+      ) : report ? (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-5 text-sm text-rose-700">
+          <div className="font-semibold">{failedReportText}</div>
+          {failureReason ? (
+            <p className="mt-2 text-xs leading-relaxed text-rose-600">{failureReason}</p>
+          ) : null}
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
@@ -103,7 +119,17 @@ function ReportCard({
   );
 }
 
-function ReportHistory({ title, reports, latestLabel }: { title: string; reports: ReportRecord[]; latestLabel: string }) {
+function ReportHistory({
+  title,
+  reports,
+  latestLabel,
+  failedLabel,
+}: {
+  title: string;
+  reports: ReportRecord[];
+  latestLabel: string;
+  failedLabel: string;
+}) {
   if (!reports.length) return null;
 
   return (
@@ -128,12 +154,23 @@ function ReportHistory({ title, reports, latestLabel }: { title: string; reports
                     {latestLabel}
                   </span>
                 ) : null}
+                {report.generation_status !== "completed" ? (
+                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-rose-700">
+                    {failedLabel}
+                  </span>
+                ) : null}
                 <span className="text-slate-500">{formatStamp(report.created_at)}</span>
               </div>
             </summary>
-            <div className="premium-report mt-4">
-              <ReactMarkdown>{report.content}</ReactMarkdown>
-            </div>
+            {report.generation_status === "completed" && report.content.trim() ? (
+              <div className="premium-report mt-4">
+                <ReactMarkdown>{report.content}</ReactMarkdown>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm text-rose-700">
+                {report.meta?.llm_error || report.meta?.pipeline_error || failedLabel}
+              </div>
+            )}
           </details>
         ))}
       </div>
@@ -157,6 +194,7 @@ function ReportSection({
   agentTip,
   noReportText,
   lowSampleText,
+  failedReportText,
 }: {
   title: string;
   description: string;
@@ -173,6 +211,7 @@ function ReportSection({
   agentTip: string;
   noReportText: string;
   lowSampleText: string;
+  failedReportText: string;
 }) {
   return (
     <section className="space-y-4">
@@ -195,8 +234,8 @@ function ReportSection({
         </div>
       </div>
       <div className="grid gap-4 xl:grid-cols-2">
-        <ReportCard label={humanLabel} tooltip={humanTip} icon={User} report={human} allowDownload noReportText={noReportText} lowSampleText={lowSampleText} />
-        <ReportCard label={agentLabel} tooltip={agentTip} icon={Bot} report={agent} noReportText={noReportText} lowSampleText={lowSampleText} />
+        <ReportCard label={humanLabel} tooltip={humanTip} icon={User} report={human} allowDownload noReportText={noReportText} lowSampleText={lowSampleText} failedReportText={failedReportText} />
+        <ReportCard label={agentLabel} tooltip={agentTip} icon={Bot} report={agent} noReportText={noReportText} lowSampleText={lowSampleText} failedReportText={failedReportText} />
       </div>
     </section>
   );
@@ -218,6 +257,12 @@ export function ReportsPage() {
   const summary = summaryQuery.data;
   const latest = latestQuery.data ?? summary?.latest_reports;
   const allReports = reportsQuery.data ?? [];
+  const latestPeriodicHuman = latest?.periodic?.human ?? null;
+  const canEmailLatestReport = Boolean(
+    latestPeriodicHuman &&
+      latestPeriodicHuman.generation_status === "completed" &&
+      latestPeriodicHuman.content.trim(),
+  );
 
   const strategicHistory = useMemo(
     () => allReports.filter((item) => item.kind === "strategic"),
@@ -312,6 +357,7 @@ export function ReportsPage() {
           agentTip={t("reports.agentBriefTip")}
           noReportText={t("reports.noReport")}
           lowSampleText={t("reports.lowSample")}
+          failedReportText={t("reports.failed")}
         />
 
         <ReportSection
@@ -329,11 +375,12 @@ export function ReportsPage() {
           agentTip={t("reports.agentBriefTip")}
           noReportText={t("reports.noReport")}
           lowSampleText={t("reports.lowSample")}
+          failedReportText={t("reports.failed")}
           extraAction={
             <button
               type="button"
               onClick={() => sendMutation.mutate()}
-              disabled={sendMutation.isPending}
+              disabled={sendMutation.isPending || !canEmailLatestReport}
               className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Mail className="h-4 w-4" />
@@ -343,8 +390,8 @@ export function ReportsPage() {
         />
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <ReportHistory title={t("reports.strategicHistory")} reports={strategicHistory} latestLabel={t("reports.latest")} />
-          <ReportHistory title={t("reports.weeklyHistory")} reports={periodicHistory} latestLabel={t("reports.latest")} />
+          <ReportHistory title={t("reports.strategicHistory")} reports={strategicHistory} latestLabel={t("reports.latest")} failedLabel={t("reports.failed")} />
+          <ReportHistory title={t("reports.weeklyHistory")} reports={periodicHistory} latestLabel={t("reports.latest")} failedLabel={t("reports.failed")} />
         </div>
       </div>
     </div>
