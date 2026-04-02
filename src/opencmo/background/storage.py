@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 
 from opencmo.storage._db import get_db
+from opencmo.background.types import ACTIVE_STATUSES
 
 
 def _task_row_to_dict(row) -> dict:
@@ -120,5 +122,115 @@ async def list_task_events(task_id: str) -> list[dict]:
         )
         rows = await cursor.fetchall()
         return [_event_row_to_dict(row) for row in rows]
+    finally:
+        await db.close()
+
+
+async def find_active_task_by_dedupe_key(dedupe_key: str) -> dict | None:
+    placeholders = ", ".join("?" for _ in ACTIVE_STATUSES)
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            f"""SELECT id, task_id, kind, project_id, status, payload_json, result_json,
+                       error_json, dedupe_key, priority, run_after, attempt_count,
+                       max_attempts, worker_id, claimed_at, heartbeat_at, started_at,
+                       completed_at, created_at, updated_at
+                FROM background_tasks
+                WHERE dedupe_key = ? AND status IN ({placeholders})
+                ORDER BY created_at DESC
+                LIMIT 1""",
+            (dedupe_key, *ACTIVE_STATUSES),
+        )
+        row = await cursor.fetchone()
+        return _task_row_to_dict(row) if row else None
+    finally:
+        await db.close()
+
+
+async def update_task_status(task_id: str, status: str) -> None:
+    db = await get_db()
+    try:
+        await db.execute(
+            "UPDATE background_tasks SET status = ?, updated_at = datetime('now') WHERE task_id = ?",
+            (status, task_id),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def complete_task(task_id: str, *, result: dict) -> None:
+    db = await get_db()
+    try:
+        await db.execute(
+            """UPDATE background_tasks
+               SET status = 'completed',
+                   result_json = ?,
+                   completed_at = datetime('now'),
+                   updated_at = datetime('now')
+               WHERE task_id = ?""",
+            (json.dumps(result), task_id),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def fail_task(task_id: str, *, error: dict) -> None:
+    db = await get_db()
+    try:
+        await db.execute(
+            """UPDATE background_tasks
+               SET status = 'failed',
+                   error_json = ?,
+                   completed_at = datetime('now'),
+                   updated_at = datetime('now')
+               WHERE task_id = ?""",
+            (json.dumps(error), task_id),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def requeue_task(task_id: str) -> None:
+    db = await get_db()
+    try:
+        await db.execute(
+            """UPDATE background_tasks
+               SET status = 'queued',
+                   worker_id = NULL,
+                   claimed_at = NULL,
+                   heartbeat_at = NULL,
+                   started_at = NULL,
+                   attempt_count = attempt_count + 1,
+                   updated_at = datetime('now')
+               WHERE task_id = ?""",
+            (task_id,),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def list_stale_tasks(*, stale_after_seconds: int) -> list[dict]:
+    cutoff = (
+        datetime.now(timezone.utc) - timedelta(seconds=stale_after_seconds)
+    ).strftime("%Y-%m-%d %H:%M:%S")
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """SELECT id, task_id, kind, project_id, status, payload_json, result_json,
+                      error_json, dedupe_key, priority, run_after, attempt_count,
+                      max_attempts, worker_id, claimed_at, heartbeat_at, started_at,
+                      completed_at, created_at, updated_at
+               FROM background_tasks
+               WHERE status IN ('claimed', 'running')
+                 AND heartbeat_at IS NOT NULL
+                 AND heartbeat_at < ?""",
+            (cutoff,),
+        )
+        rows = await cursor.fetchall()
+        return [_task_row_to_dict(row) for row in rows]
     finally:
         await db.close()
