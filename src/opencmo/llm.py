@@ -161,16 +161,18 @@ async def get_openai_client() -> Any:
     base_url = await get_key_async("OPENAI_BASE_URL")
 
     # Normalize base_url: Many providers (XH, DeepSeek, etc.) require /v1 suffix.
+    # Skip for OpenAI official domains — the SDK handles routing internally.
+    _SKIP_V1_DOMAINS = {"api.openai.com", "api.anthropic.com"}
     if base_url:
         base_url = base_url.strip().rstrip("/")
-        if not base_url.endswith("/v1"):
-            # Only append if it doesn't look like it already has a path
-            # Simple heuristic: if there are no more than 2 slashes (the ones in https://)
+        from urllib.parse import urlparse as _urlparse
+        host = _urlparse(base_url).hostname or ""
+        if host not in _SKIP_V1_DOMAINS and not base_url.endswith("/v1"):
             if base_url.count("/") <= 2:
                 base_url += "/v1"
-    
+
     model = await get_model()
-    logger.info("Creating LLM client: model=%s, base_url=%s", model, base_url or "OpenAI Default")
+    logger.debug("LLM client: model=%s, base_url=%s", model, base_url or "OpenAI Default")
 
     return AsyncOpenAI(
         api_key=api_key,
