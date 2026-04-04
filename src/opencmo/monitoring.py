@@ -765,6 +765,26 @@ async def run_monitoring_workflow(
                     detail=str(exc),
                 ))
 
+        # Auto-trigger graph expansion after successful full scan
+        if job_type == "full":
+            try:
+                from opencmo.background import service as bg_service
+
+                existing = await bg_service.find_active_task_by_dedupe_key(f"graph:project:{project_id}")
+                if existing is None:
+                    await storage.get_or_create_expansion(project_id)
+                    await storage.seed_expansion_nodes(project_id)
+                    await storage.update_expansion(project_id, desired_state="running")
+                    await bg_service.enqueue_task(
+                        kind="graph_expansion",
+                        project_id=project_id,
+                        payload={"project_id": project_id},
+                        dedupe_key=f"graph:project:{project_id}",
+                    )
+                    logger.info("Auto-triggered graph expansion for project %d", project_id)
+            except Exception as exc:
+                logger.debug("Graph expansion auto-trigger skipped: %s", exc)
+
         return {
             "run_id": run_id,
             "status": "completed",
