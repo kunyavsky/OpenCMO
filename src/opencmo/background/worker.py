@@ -146,7 +146,7 @@ class BackgroundWorker:
 
     async def _execute_task(self, task: dict) -> None:
         from opencmo import llm
-        
+
         # Inject BYOK context if present in task payload
         byok_keys = task.get("payload", {}).get("_byok_keys", {})
         token = None

@@ -18,7 +18,7 @@ async def enqueue_task(
     run_after: str | None = None,
 ) -> dict:
     from opencmo import llm
-    
+
     # Capture BYOK keys from current request context
     keys = llm.get_request_keys()
     if keys:
