@@ -142,6 +142,33 @@ async def fail_task(task_id: str, *, error: dict) -> None:
     )
 
 
+async def recover_orphaned_tasks(*, stale_after_seconds: int) -> int:
+    """Recover tasks left in running/claimed from a previous worker lifetime.
+
+    Unlike ``recover_stale_tasks`` (which only looks at non-NULL heartbeats),
+    this also catches tasks whose heartbeat is NULL — e.g. tasks that were
+    claimed but never started before the process died.
+    """
+    orphaned = await bg_storage.list_orphaned_tasks(stale_after_seconds=stale_after_seconds)
+    fixed = 0
+    for task in orphaned:
+        if task["attempt_count"] < task["max_attempts"]:
+            await bg_storage.requeue_task(task["task_id"])
+            await bg_storage.append_task_event(
+                task["task_id"],
+                event_type="state_change",
+                status="queued",
+                summary="Task requeued after worker restart recovery",
+            )
+        else:
+            await fail_task(
+                task["task_id"],
+                error={"message": "Task exceeded max attempts (recovered after restart)"},
+            )
+        fixed += 1
+    return fixed
+
+
 async def recover_stale_tasks(*, stale_after_seconds: int) -> int:
     stale_tasks = await bg_storage.list_stale_tasks(stale_after_seconds=stale_after_seconds)
     fixed = 0

@@ -98,6 +98,19 @@ class BackgroundWorker:
         self._stop.clear()
         self._global_sem = asyncio.Semaphore(self.max_concurrency)
         self._kind_sems.clear()
+
+        # Recover tasks left in running/claimed from a previous worker lifetime
+        try:
+            recovered = await bg_service.recover_orphaned_tasks(
+                stale_after_seconds=self.stale_after_seconds,
+            )
+            if recovered:
+                logger.info(
+                    "Startup recovery: requeued/failed %d orphaned task(s)", recovered
+                )
+        except Exception:
+            logger.exception("Startup recovery failed — continuing anyway")
+
         self._loop_task = asyncio.create_task(self._run_loop())
 
     async def stop(self) -> None:

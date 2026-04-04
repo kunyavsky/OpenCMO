@@ -554,6 +554,7 @@ export const zh: Record<TranslationKey, string> = {
   "analysis.runBackground": "后台运行",
   "analysis.backgroundHint": "分析在后台运行，可以随时关闭此窗口。",
   "analysis.closeBackground": "关闭并继续后台运行",
+  "analysis.taskStale": "任务可能已中断，请尝试重新运行。",
   "analysis.stageContextBuild": "上下文构建",
   "analysis.stageSignalCollect": "信号采集",
   "analysis.stageSignalNormalize": "证据归一化",

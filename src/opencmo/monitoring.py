@@ -155,6 +155,14 @@ async def _build_project_context(
     keywords = await storage.list_tracked_keywords(project_id)
     competitors = await storage.list_competitors(project_id)
 
+    if analyze_url and len(keywords) == 0:
+        await _emit(run_id, on_progress, _event(
+            "context_build",
+            "warning",
+            "AI analysis did not extract any keywords. Downstream SEO and SERP checks will have limited coverage.",
+            agent="Project Context Builder",
+        ))
+
     await _emit(run_id, on_progress, _event(
         "context_build",
         "completed",
