@@ -217,9 +217,12 @@ async def _collect_signals(
     if job_type in ("seo", "full"):
         try:
             from crawl4ai import AsyncWebCrawler
+
             from opencmo.tools.seo_audit import (
-                _build_report, _check_robots_and_sitemap,
-                _fetch_core_web_vitals, _SEOParser,
+                _build_report,
+                _check_robots_and_sitemap,
+                _fetch_core_web_vitals,
+                _SEOParser,
             )
 
             async with AsyncWebCrawler() as crawler:
@@ -262,6 +265,7 @@ async def _collect_signals(
     if job_type in ("geo", "full"):
         try:
             import json as _json
+
             from opencmo.tools.geo_providers import GEO_PROVIDER_REGISTRY
             from opencmo.tools.text_signals import analyze_geo_sentiment
 
@@ -324,6 +328,7 @@ async def _collect_signals(
     if job_type in ("community", "full"):
         try:
             import json as _json
+
             from opencmo.tools.community import _scan_community_impl
             from opencmo.tools.community_scoring import text_relevance
 
