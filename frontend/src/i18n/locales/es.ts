@@ -468,6 +468,7 @@ export const es: Record<TranslationKey, string> = {
   "analysis.backgroundHint": "El análisis se ejecuta en segundo plano. Puedes cerrar esta ventana.",
   "analysis.closeBackground": "Cerrar — continúa en segundo plano",
   "analysis.taskStale": "Es posible que la tarea se haya interrumpido. Intenta ejecutarla de nuevo.",
+  "analysis.noApiKey": "No se configuró una clave API. El análisis de IA fue omitido.",
   "analysis.stageContextBuild": "Construcción de Contexto",
   "analysis.stageSignalCollect": "Recolección de Señales",
   "analysis.stageSignalNormalize": "Normalización",

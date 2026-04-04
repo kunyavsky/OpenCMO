@@ -533,6 +533,7 @@ export const ja: Record<TranslationKey, string> = {
   "analysis.backgroundHint": "分析はバックグラウンドで実行されます。いつでも閉じられます。",
   "analysis.closeBackground": "閉じる（バックグラウンドで継続）",
   "analysis.taskStale": "タスクが中断された可能性があります。再実行してください。",
+  "analysis.noApiKey": "APIキーが設定されていません。AI分析はスキップされました。",
   "analysis.stageContextBuild": "コンテキスト構築",
   "analysis.stageSignalCollect": "シグナル収集",
   "analysis.stageSignalNormalize": "正規化",

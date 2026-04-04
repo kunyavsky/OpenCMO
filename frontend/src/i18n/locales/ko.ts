@@ -468,6 +468,7 @@ export const ko: Record<TranslationKey, string> = {
   "analysis.backgroundHint": "분석은 백그라운드에서 실행됩니다. 언제든지 닫을 수 있습니다.",
   "analysis.closeBackground": "닫기 — 백그라운드에서 계속",
   "analysis.taskStale": "작업이 중단되었을 수 있습니다. 다시 실행해 보세요.",
+  "analysis.noApiKey": "API 키가 설정되지 않았습니다. AI 분석이 건너뛰어졌습니다.",
   "analysis.stageContextBuild": "컨텍스트 구축",
   "analysis.stageSignalCollect": "시그널 수집",
   "analysis.stageSignalNormalize": "정규화",
