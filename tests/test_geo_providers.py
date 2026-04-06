@@ -31,10 +31,10 @@ def _use_light_profile(monkeypatch):
 
 
 def test_geo_provider_registry():
-    assert len(GEO_PROVIDER_REGISTRY) == 10
+    assert len(GEO_PROVIDER_REGISTRY) == 11
     names = {p.name for p in GEO_PROVIDER_REGISTRY}
     assert names == {
-        "Perplexity", "You.com", "ChatGPT", "Claude", "Gemini",
+        "Default LLM", "Perplexity", "You.com", "ChatGPT", "Claude", "Gemini",
         "Kimi", "Qwen", "DeepSeek", "Zhipu GLM", "Doubao",
     }
 
