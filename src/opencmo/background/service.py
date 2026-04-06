@@ -132,6 +132,7 @@ async def complete_task(task_id: str, *, result: dict | None = None) -> None:
 
 
 async def fail_task(task_id: str, *, error: dict) -> None:
+    task = await bg_storage.get_task(task_id)
     await bg_storage.fail_task(task_id, error=error)
     await bg_storage.append_task_event(
         task_id,
@@ -140,6 +141,13 @@ async def fail_task(task_id: str, *, error: dict) -> None:
         summary=error.get("message", "Task failed"),
         payload=error,
     )
+    # Keep scan_runs table in sync when a scan task is failed externally
+    if task and task.get("kind") == "scan":
+        try:
+            from opencmo.storage import fail_scan_run_by_task_id
+            await fail_scan_run_by_task_id(task_id, error.get("message", "Task failed"))
+        except Exception:
+            pass
 
 
 async def recover_orphaned_tasks(*, stale_after_seconds: int) -> int:

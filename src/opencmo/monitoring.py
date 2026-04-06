@@ -229,8 +229,11 @@ async def _collect_signals(
                 _SEOParser,
             )
 
-            async with AsyncWebCrawler() as crawler:
-                result = await crawler.arun(url=url)
+            async def _crawl_and_parse():
+                async with AsyncWebCrawler() as crawler:
+                    return await crawler.arun(url=url)
+
+            result = await _asyncio.wait_for(_crawl_and_parse(), timeout=90)
             parser = _SEOParser()
             html = getattr(result, "html", "") or ""
             parser.feed(html)
