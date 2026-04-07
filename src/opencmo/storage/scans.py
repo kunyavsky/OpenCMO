@@ -61,7 +61,10 @@ async def save_geo_scan(
                (project_id, geo_score, visibility_score, position_score,
                 sentiment_score, crawl_success_rate, platform_results_json)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (project_id, geo_score, visibility_score, position_score,
+            # Coerce None → 0: existing databases have geo_score NOT NULL from
+            # before migration v9, and SQLite cannot ALTER COLUMN to drop it.
+            (project_id, geo_score if geo_score is not None else 0,
+             visibility_score, position_score,
              sentiment_score, crawl_success_rate, platform_results_json),
         )
         await db.commit()

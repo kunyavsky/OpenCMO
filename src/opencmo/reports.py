@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import html
 import json
 import logging
@@ -202,8 +203,6 @@ async def _get_recent_approvals(project_id: int, start: datetime) -> list[dict]:
 
 
 async def _build_strategic_facts(project_id: int) -> tuple[dict, dict]:
-    import asyncio
-
     project = await storage.get_project(project_id)
     if not project:
         raise ValueError(f"Project {project_id} not found.")
@@ -399,8 +398,6 @@ async def _build_periodic_facts(
     now: datetime | None = None,
     window_days: int = _PERIODIC_WINDOW_DAYS,
 ) -> tuple[dict, dict]:
-    import asyncio
-
     project = await storage.get_project(project_id)
     if not project:
         raise ValueError(f"Project {project_id} not found.")

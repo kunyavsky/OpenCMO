@@ -197,7 +197,7 @@ export const en = {
   "settings.apiKeyHint": "Your OpenAI-compatible API key. Stored on the server.",
   "settings.baseUrl": "Base URL (optional)",
   "settings.baseUrlPlaceholder": "https://api.deepseek.com/v1",
-  "settings.baseUrlHint": "OpenAI-compatible URL. Providers like DeepSeek, OpenRouter usually need /v1 suffix.",
+  "settings.baseUrlHint": "Custom OpenAI-compatible URL. Providers like DeepSeek, OpenRouter, or XH usually require the /v1 suffix (e.g., https://xh.v1api.cc/v1).",
   "settings.model": "Model (optional)",
   "settings.modelPlaceholder": "gpt-4o",
   "settings.modelHint": "Override the default model.",

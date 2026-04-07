@@ -199,7 +199,7 @@ export const zh: Record<TranslationKey, string> = {
   "settings.apiKeyHint": "您的 OpenAI 兼容 API 密钥，保存在服务端。",
   "settings.baseUrl": "Base URL（可选）",
   "settings.baseUrlPlaceholder": "https://api.deepseek.com/v1",
-  "settings.baseUrlHint": "OpenAI 兼容 URL。DeepSeek、OpenRouter 等通常需要 /v1 后缀。",
+  "settings.baseUrlHint": "自定义 OpenAI 兼容 URL。DeepSeek、OpenRouter、XH 等通常需要 /v1 后缀（如 https://xh.v1api.cc/v1）。",
   "settings.model": "模型（可选）",
   "settings.modelPlaceholder": "gpt-4o",
   "settings.modelHint": "覆盖默认模型。",

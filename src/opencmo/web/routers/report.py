@@ -95,7 +95,7 @@ async def api_v1_regenerate_report(project_id: int, kind: str, request: Request)
     # worker (which runs outside this request) can use them.
     from opencmo import llm
     payload: dict = {"project_id": project_id, "kind": kind}
-    request_keys = llm._request_keys.get({})
+    request_keys = llm.get_request_keys()
     if request_keys:
         payload["__user_keys"] = request_keys
 
