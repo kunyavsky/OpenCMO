@@ -168,6 +168,30 @@ async def test_run_scheduled_scan_generates_periodic_report_on_cron_full(tmp_pat
 
 
 @pytest.mark.asyncio
+async def test_run_scheduled_scan_skips_missing_keyword_suggester_without_error_log(tmp_path):
+    db_path = tmp_path / "test.db"
+    with patch.object(storage, "_DB_PATH", db_path):
+        pid = await storage.ensure_project("NoSuggest", "https://nosuggest.test", "testing")
+
+        crawl_result = type("CrawlResult", (), {"html": "<html><title>NoSuggest</title></html>"})()
+        crawler = AsyncMock()
+        crawler.__aenter__.return_value = crawler
+        crawler.__aexit__.return_value = False
+        crawler.arun.return_value = crawl_result
+
+        with patch("crawl4ai.AsyncWebCrawler", return_value=crawler), \
+             patch("opencmo.tools.seo_audit._fetch_core_web_vitals", new_callable=AsyncMock, return_value={"performance": 0.8, "lcp": 2200, "cls": 0.02, "tbt": 150}), \
+             patch("opencmo.tools.seo_audit._check_robots_and_sitemap", new_callable=AsyncMock, return_value={"has_robots": True, "has_sitemap": True}), \
+             patch("opencmo.tools.serp_tracker.track_project_keywords", new_callable=AsyncMock), \
+             patch("opencmo.tools.ai_crawler_check._ai_crawler_impl", new_callable=AsyncMock, return_value={"blocked_count": 0, "total_crawlers": 14, "has_llms_txt": True, "crawler_results": []}), \
+             patch.object(scheduler_module.logger, "exception") as mock_exception:
+            await run_scheduled_scan(pid, "seo")
+
+        error_messages = [call.args[0] for call in mock_exception.call_args_list if call.args]
+        assert "Keyword suggestion failed for project %d" not in error_messages
+
+
+@pytest.mark.asyncio
 async def test_run_scheduled_scan_geo_uses_real_sentiment_analysis(tmp_path):
     db_path = tmp_path / "test.db"
     with patch.object(storage, "_DB_PATH", db_path):

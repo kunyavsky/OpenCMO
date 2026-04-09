@@ -119,11 +119,19 @@ async def run_scheduled_scan(
         # Keyword suggestions (independent — refreshes suggestions each scan)
         try:
             from opencmo.tools.keyword_suggest import suggest_keywords_impl
-
-            await suggest_keywords_impl(project_id, url)
-            logger.info("Keyword suggestions updated for project %d", project_id)
+        except ModuleNotFoundError as exc:
+            if exc.name == "opencmo.tools.keyword_suggest":
+                logger.debug("Keyword suggestion module not available; skipping for project %d", project_id)
+            else:
+                logger.exception("Keyword suggestion failed for project %d", project_id)
         except Exception:
             logger.exception("Keyword suggestion failed for project %d", project_id)
+        else:
+            try:
+                await suggest_keywords_impl(project_id, url)
+                logger.info("Keyword suggestions updated for project %d", project_id)
+            except Exception:
+                logger.exception("Keyword suggestion failed for project %d", project_id)
 
         # AI crawler access check (independent)
         try:
