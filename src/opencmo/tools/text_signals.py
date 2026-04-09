@@ -78,7 +78,7 @@ async def analyze_geo_sentiment(
                 },
             ],
             temperature=0.3,
-            model_override=llm.get_key("OPENCMO_MODEL_DEFAULT", "gpt-4o"),
+            model_override=await llm.get_model(),
         )
         text = text.strip()
         if text.startswith("```"):

@@ -401,7 +401,7 @@ class ChatGPTProvider(GeoProvider):
                         "content": query,
                     }
                 ],
-                model_override="gpt-4o-mini",
+                model_override=await llm.get_model(),
                 max_tokens=1024,
             )
             mentioned, mention_count, position_pct = _analyze_text(
