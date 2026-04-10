@@ -418,6 +418,9 @@ export interface AISettings {
   // Search (Tavily)
   tavily_key_set: boolean;
   tavily_key_masked: string;
+  // GitHub
+  github_token_set: boolean;
+  github_token_masked: string;
   // SERP
   dataforseo_configured: boolean;
   dataforseo_login: string;
@@ -427,4 +430,56 @@ export interface AISettings {
   smtp_port: string;
   smtp_user: string;
   report_email: string;
+}
+
+// GitHub Leads
+export interface GitHubLead {
+  id: number;
+  login: string;
+  github_id: number | null;
+  name: string;
+  bio: string;
+  company: string;
+  location: string;
+  email: string;
+  blog: string;
+  twitter_username: string;
+  hireable: boolean | null;
+  followers: number;
+  following: number;
+  public_repos: number;
+  top_languages: string[];
+  total_stars: number;
+  top_repos: { name: string; description: string; language: string; stars: number }[];
+  source: string;
+  seed_username: string;
+  outreach_score: number;
+  outreach_status: string;
+  outreach_channel: string;
+  outreach_note: string;
+  enriched: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GitHubDiscoveryRun {
+  id: number;
+  task_id: string;
+  seed_username: string;
+  source: string;
+  max_hops: number;
+  total_discovered: number;
+  total_enriched: number;
+  status: string;
+  error: string;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface GitHubLeadStats {
+  total: number;
+  enriched: number;
+  has_email: number;
+  has_twitter: number;
+  avg_score: number;
 }

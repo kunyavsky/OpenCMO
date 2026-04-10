@@ -470,6 +470,59 @@ ON scan_runs(project_id, created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_projects_brand_name
 ON projects(brand_name COLLATE NOCASE);
+
+CREATE TABLE IF NOT EXISTS github_leads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id),
+    login TEXT NOT NULL,
+    github_id INTEGER,
+    name TEXT NOT NULL DEFAULT '',
+    bio TEXT NOT NULL DEFAULT '',
+    company TEXT NOT NULL DEFAULT '',
+    location TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
+    blog TEXT NOT NULL DEFAULT '',
+    twitter_username TEXT NOT NULL DEFAULT '',
+    hireable INTEGER,
+    followers INTEGER NOT NULL DEFAULT 0,
+    following INTEGER NOT NULL DEFAULT 0,
+    public_repos INTEGER NOT NULL DEFAULT 0,
+    created_at_gh TEXT NOT NULL DEFAULT '',
+    top_languages TEXT NOT NULL DEFAULT '[]',
+    total_stars INTEGER NOT NULL DEFAULT 0,
+    top_repos_json TEXT NOT NULL DEFAULT '[]',
+    source TEXT NOT NULL DEFAULT '',
+    seed_username TEXT NOT NULL DEFAULT '',
+    outreach_score REAL NOT NULL DEFAULT 0,
+    outreach_status TEXT NOT NULL DEFAULT 'not_contacted',
+    outreach_channel TEXT NOT NULL DEFAULT '',
+    outreach_note TEXT NOT NULL DEFAULT '',
+    enriched INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(project_id, login)
+);
+
+CREATE INDEX IF NOT EXISTS idx_github_leads_project_score
+ON github_leads(project_id, outreach_score DESC);
+
+CREATE INDEX IF NOT EXISTS idx_github_leads_project_status
+ON github_leads(project_id, outreach_status);
+
+CREATE TABLE IF NOT EXISTS github_discovery_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id),
+    task_id TEXT NOT NULL,
+    seed_username TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'both',
+    max_hops INTEGER NOT NULL DEFAULT 1,
+    total_discovered INTEGER NOT NULL DEFAULT 0,
+    total_enriched INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'running',
+    error TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at TEXT
+);
 """
 
 # ---------------------------------------------------------------------------
@@ -523,6 +576,55 @@ _MIGRATIONS: list[tuple[int, str, list[str]]] = [
     (10, "finding and recommendation metadata json columns", [
         "ALTER TABLE scan_findings ADD COLUMN metadata_json TEXT NOT NULL DEFAULT '{}'",
         "ALTER TABLE scan_recommendations ADD COLUMN metadata_json TEXT NOT NULL DEFAULT '{}'",
+    ]),
+    (11, "github leads and discovery runs tables", [
+        """CREATE TABLE IF NOT EXISTS github_leads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL REFERENCES projects(id),
+            login TEXT NOT NULL,
+            github_id INTEGER,
+            name TEXT NOT NULL DEFAULT '',
+            bio TEXT NOT NULL DEFAULT '',
+            company TEXT NOT NULL DEFAULT '',
+            location TEXT NOT NULL DEFAULT '',
+            email TEXT NOT NULL DEFAULT '',
+            blog TEXT NOT NULL DEFAULT '',
+            twitter_username TEXT NOT NULL DEFAULT '',
+            hireable INTEGER,
+            followers INTEGER NOT NULL DEFAULT 0,
+            following INTEGER NOT NULL DEFAULT 0,
+            public_repos INTEGER NOT NULL DEFAULT 0,
+            created_at_gh TEXT NOT NULL DEFAULT '',
+            top_languages TEXT NOT NULL DEFAULT '[]',
+            total_stars INTEGER NOT NULL DEFAULT 0,
+            top_repos_json TEXT NOT NULL DEFAULT '[]',
+            source TEXT NOT NULL DEFAULT '',
+            seed_username TEXT NOT NULL DEFAULT '',
+            outreach_score REAL NOT NULL DEFAULT 0,
+            outreach_status TEXT NOT NULL DEFAULT 'not_contacted',
+            outreach_channel TEXT NOT NULL DEFAULT '',
+            outreach_note TEXT NOT NULL DEFAULT '',
+            enriched INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(project_id, login)
+        )""",
+        "CREATE INDEX IF NOT EXISTS idx_github_leads_project_score ON github_leads(project_id, outreach_score DESC)",
+        "CREATE INDEX IF NOT EXISTS idx_github_leads_project_status ON github_leads(project_id, outreach_status)",
+        """CREATE TABLE IF NOT EXISTS github_discovery_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL REFERENCES projects(id),
+            task_id TEXT NOT NULL,
+            seed_username TEXT NOT NULL,
+            source TEXT NOT NULL DEFAULT 'both',
+            max_hops INTEGER NOT NULL DEFAULT 1,
+            total_discovered INTEGER NOT NULL DEFAULT 0,
+            total_enriched INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'running',
+            error TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            completed_at TEXT
+        )""",
     ]),
 ]
 

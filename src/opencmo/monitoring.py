@@ -198,7 +198,7 @@ async def _collect_signals(
     await _emit(run_id, on_progress, _event(
         "signal_collect",
         "started",
-        "Collecting SEO, GEO, community, and SERP signals.",
+        "Collecting SEO, GEO, community, GitHub, and SERP signals.",
         agent="Signal Collector",
     ))
 
@@ -430,6 +430,31 @@ async def _collect_signals(
                 "signal_collect", "warning", f"Community scan failed: {exc}", agent="Signal Collector",
             ))
 
+    async def _run_github():
+        await _emit(run_id, on_progress, _event(
+            "signal_collect",
+            "running",
+            "Starting GitHub developer discovery from product context.",
+            agent="Signal Collector",
+        ))
+        try:
+            from opencmo.services.github_service import auto_discover_from_product
+
+            result = await auto_discover_from_product(project_id)
+            discovered = result.get("discovered", 0)
+            contactable = result.get("contactable", 0)
+            await _emit(run_id, on_progress, _event(
+                "signal_collect",
+                "running",
+                f"GitHub discovery finished: {discovered} found, {contactable} contactable.",
+                agent="Signal Collector",
+            ))
+        except Exception as exc:
+            warnings.append(f"GitHub discovery failed: {exc}")
+            await _emit(run_id, on_progress, _event(
+                "signal_collect", "warning", f"GitHub discovery failed: {exc}", agent="Signal Collector",
+            ))
+
     # --- Run scans in parallel ---
     tasks = []
     if job_type in ("seo", "full"):
@@ -438,6 +463,8 @@ async def _collect_signals(
         tasks.append(_run_geo())
     if job_type in ("community", "full"):
         tasks.append(_run_community())
+    if job_type in ("github", "full"):
+        tasks.append(_run_github())
 
     if tasks:
         await _asyncio.gather(*tasks)

@@ -183,6 +183,24 @@ from opencmo.storage.serp import (
     save_serp_snapshot,
 )
 
+# --- GitHub Leads ---
+from opencmo.storage.github import (
+    batch_update_enrichment,
+    batch_upsert_github_leads,
+    count_github_leads,
+    create_discovery_run,
+    delete_github_leads,
+    get_github_lead,
+    get_github_lead_stats,
+    get_unenriched_leads,
+    list_discovery_runs,
+    list_github_leads,
+    update_discovery_run,
+    update_lead_outreach,
+    update_lead_score,
+    upsert_github_lead,
+)
+
 # --- Settings ---
 from opencmo.storage.settings import (
     delete_setting,
@@ -283,4 +301,10 @@ __all__ = [
     "get_latest_report", "get_latest_reports",
     # brand_kit
     "get_brand_kit", "upsert_brand_kit", "build_brand_kit_prompt",
+    # github
+    "upsert_github_lead", "batch_upsert_github_leads", "get_github_lead",
+    "list_github_leads", "count_github_leads", "update_lead_outreach",
+    "update_lead_score", "batch_update_enrichment", "get_unenriched_leads",
+    "delete_github_leads", "create_discovery_run", "update_discovery_run",
+    "list_discovery_runs", "get_github_lead_stats",
 ]

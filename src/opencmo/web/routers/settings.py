@@ -47,6 +47,8 @@ async def api_v1_settings_get():
     pagespeed_key = await _get_setting("PAGESPEED_API_KEY")
     # Search (Tavily)
     tavily_key = await _get_setting("TAVILY_API_KEY")
+    # GitHub
+    github_token = await _get_setting("GITHUB_TOKEN")
     # SERP
     dataforseo_login = await _get_setting("DATAFORSEO_LOGIN")
     dataforseo_pass = await _get_setting("DATAFORSEO_PASSWORD")
@@ -80,6 +82,9 @@ async def api_v1_settings_get():
         # Search (Tavily)
         "tavily_key_set": bool(tavily_key),
         "tavily_key_masked": _mask_key(tavily_key),
+        # GitHub
+        "github_token_set": bool(github_token),
+        "github_token_masked": _mask_key(github_token),
         # SERP
         "dataforseo_configured": bool(dataforseo_login and dataforseo_pass),
         "dataforseo_login": dataforseo_login,
@@ -105,6 +110,8 @@ _ALL_SETTING_KEYS = (
     "PAGESPEED_API_KEY",
     # Search (Tavily)
     "TAVILY_API_KEY",
+    # GitHub
+    "GITHUB_TOKEN",
     # SERP
     "DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD",
     # Email

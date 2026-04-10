@@ -12,6 +12,7 @@ const TABS: { path: string; labelKey: TranslationKey }[] = [
   { path: "/serp", labelKey: "project.serp" },
   { path: "/community", labelKey: "project.community" },
   { path: "/graph", labelKey: "project.graph" },
+  { path: "/github-leads", labelKey: "project.githubLeads" },
   { path: "/monitors", labelKey: "project.monitors" },
 ];
 

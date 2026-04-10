@@ -54,6 +54,7 @@ async def _startup_runtime_services():
     """Start optional runtime services after DB bootstrap."""
     from opencmo import scheduler
     from opencmo.background.executors import (
+        run_github_enrich_executor,
         run_graph_expansion_executor,
         run_report_executor,
         run_scan_executor,
@@ -64,6 +65,7 @@ async def _startup_runtime_services():
     worker.register_executor("scan", run_scan_executor)
     worker.register_executor("report", run_report_executor)
     worker.register_executor("graph_expansion", run_graph_expansion_executor)
+    worker.register_executor("github_enrich", run_github_enrich_executor)
     await worker.start()
 
     if not scheduler.is_scheduler_available():
@@ -157,6 +159,7 @@ from opencmo.web.routers.brand_kit import router as brand_kit_router
 from opencmo.web.routers.campaigns import router as campaigns_router
 from opencmo.web.routers.chat import router as chat_router
 from opencmo.web.routers.events import router as events_router
+from opencmo.web.routers.github import router as github_router
 from opencmo.web.routers.graph import router as graph_router
 from opencmo.web.routers.insights import router as insights_router
 from opencmo.web.routers.keywords import router as keywords_router
@@ -185,6 +188,7 @@ app.include_router(events_router)
 app.include_router(brand_kit_router)
 app.include_router(performance_router)
 app.include_router(quick_actions_router)
+app.include_router(github_router)
 
 
 # ---------------------------------------------------------------------------

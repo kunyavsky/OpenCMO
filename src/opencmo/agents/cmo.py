@@ -5,6 +5,7 @@ from opencmo.agents.community import community_agent
 from opencmo.agents.devto import devto_expert
 from opencmo.agents.geo import geo_agent
 from opencmo.agents.gitcode import gitcode_expert
+from opencmo.agents.github import github_outreach_agent
 from opencmo.agents.hackernews import hackernews_expert
 from opencmo.agents.infoq import infoq_expert
 from opencmo.agents.jike import jike_expert
@@ -107,6 +108,10 @@ trend_tool = trend_agent.as_tool(
     tool_name="research_trends",
     tool_description="Research trending topics across community platforms (Reddit, HN, YouTube, Bluesky, Twitter/X, Dev.to). Supports comparative mode for 'X vs Y' queries.",
 )
+github_outreach_tool = github_outreach_agent.as_tool(
+    tool_name="github_user_discovery",
+    tool_description="Discover GitHub users from a seed profile's followers/following, enrich profiles, score leads, and generate personalized batch outreach messages.",
+)
 
 cmo_agent = Agent(
     name="CMO Agent",
@@ -138,6 +143,7 @@ Your job is to think like a real marketing leader, not a generic assistant. Conv
    - Brand presence / digital footprint → AI Visibility Expert
    - Community monitoring (Reddit/HN discussions) → Community Monitor
    - Trend research / what's hot / topic exploration → Trend Research
+   - GitHub user discovery / developer outreach / batch marketing / find GitHub users → GitHub Outreach Expert
    - Competitive landscape / keyword gaps / graph intelligence → use `get_competitive_landscape` tool
    - 阮一峰周刊投稿 → 阮一峰周刊专家
    - 知乎文章/回答 → 知乎专家
@@ -218,6 +224,7 @@ When the user asks for "全平台" or "comprehensive" distribution, prioritize i
         infoq_tool,
         devto_tool,
         trend_tool,
+        github_outreach_tool,
         get_competitive_landscape,
     ],
     handoffs=[
@@ -308,6 +315,10 @@ When the user asks for "全平台" or "comprehensive" distribution, prioritize i
         handoff(
             devto_expert,
             tool_description_override="Transfer to Dev.to expert for developer blog articles and tutorials.",
+        ),
+        handoff(
+            github_outreach_agent,
+            tool_description_override="Transfer to GitHub outreach expert for developer discovery and personalized batch outreach via GitHub social graphs.",
         ),
     ],
     model=get_model("cmo"),
