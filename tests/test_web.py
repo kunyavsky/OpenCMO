@@ -1228,6 +1228,37 @@ def test_spa_catchall(client, tmp_path):
         assert "console" in resp.text
 
 
+def test_spa_catchall_blog_route_injects_public_metadata(client, tmp_path):
+    spa_dir = tmp_path / "spa_dist"
+    spa_dir.mkdir()
+    (spa_dir / "index.html").write_text(
+        """
+        <html>
+          <head>
+            <title>OpenCMO | Home</title>
+            <meta name="description" content="home desc" />
+            <link rel="canonical" href="https://www.aidcmo.com/" />
+            <meta property="og:title" content="OpenCMO | Home" />
+            <meta property="og:description" content="home desc" />
+            <meta property="og:url" content="https://www.aidcmo.com/" />
+            <meta name="twitter:title" content="OpenCMO | Home" />
+            <meta name="twitter:description" content="home desc" />
+          </head>
+          <body>
+            <main id="static-site-copy"><h1>Home</h1></main>
+          </body>
+        </html>
+        """
+    )
+
+    with patch.object(app_module, "_SPA_DIR", spa_dir):
+        resp = client.get("/blog")
+        assert resp.status_code == 200
+        assert "OpenCMO Blog | Notes on SEO, GEO, AI Visibility, and Growth Operations" in resp.text
+        assert 'href="https://www.aidcmo.com/blog"' in resp.text
+        assert "Playbooks, explainers, and operating notes for modern visibility teams" in resp.text
+
+
 def test_spa_catchall_no_dist(client, tmp_path):
     """SPA routes return 404 message when dist doesn't exist."""
     fake_dir = tmp_path / "nonexistent_dist"

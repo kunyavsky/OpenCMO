@@ -9,6 +9,7 @@ OpenCMO helps teams understand how their brand is discovered across traditional 
 ## Primary URLs
 
 - Product overview: https://www.aidcmo.com/
+- Public blog: https://www.aidcmo.com/blog
 - Source code: https://github.com/study8677/OpenCMO
 - Sitemap: https://www.aidcmo.com/sitemap.xml
 
@@ -19,8 +20,10 @@ OpenCMO helps teams understand how their brand is discovered across traditional 
 - SERP keyword monitoring
 - Community discussion discovery and review
 - Growth recommendations and execution workflows
+- Public blog and product explainers for humans and AI agents
 
 ## Crawling notes
 
 - Canonical product URL: https://www.aidcmo.com/
+- Public editorial URL: https://www.aidcmo.com/blog
 - Internal workspace routes such as `/workspace`, `/projects/*`, `/chat`, and `/approvals` are application surfaces, not documentation pages.

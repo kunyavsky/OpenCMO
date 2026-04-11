@@ -1,347 +1,440 @@
-import {
-  ArrowRight,
-  Bot,
-  Compass,
-  ExternalLink,
-  Globe2,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  Users,
-} from "lucide-react";
-import { useEffect } from "react";
+import { ArrowRight, Bot, Radar, Search, Users } from "lucide-react";
+import { motion } from "framer-motion";
 import { Link } from "react-router";
+import { PublicSiteHeader } from "../components/marketing/PublicSiteHeader";
+import { SectionReveal } from "../components/marketing/SectionReveal";
 import { SiteFooter } from "../components/layout/SiteFooter";
+import {
+  BLOG_ARTICLES,
+  LANDING_FAQS,
+  LANDING_PLATFORM_ITEMS,
+  LANDING_WORKFLOW_STEPS,
+  PUBLIC_HOME_NAV,
+} from "../content/marketing";
 import { useSiteStats } from "../hooks/useSiteStats";
+import { usePageMetadata } from "../hooks/usePageMetadata";
 import { useI18n } from "../i18n";
-import type { Locale } from "../i18n/I18nProvider";
-import type { TranslationKey } from "../i18n";
 
-const GITHUB_REPO = "https://github.com/study8677/OpenCMO";
-const LOCALE_CYCLE: Locale[] = ["en", "zh", "ja", "ko", "es"];
-const LOCALE_LABELS: Record<Locale, string> = {
-  en: "EN",
-  zh: "中文",
-  ja: "日本語",
-  ko: "한국어",
-  es: "ES",
-};
-
-const CRAWLER_BULLET_KEYS: TranslationKey[] = [
-  "landing.crawlerBullet1",
-  "landing.crawlerBullet2",
-  "landing.crawlerBullet3",
-];
-
-const FAQ_ITEMS: Array<{ question: TranslationKey; answer: TranslationKey }> = [
-  {
-    question: "landing.faq1Question",
-    answer: "landing.faq1Answer",
-  },
-  {
-    question: "landing.faq2Question",
-    answer: "landing.faq2Answer",
-  },
-  {
-    question: "landing.faq3Question",
-    answer: "landing.faq3Answer",
-  },
-];
+const HERO_ICONS = [Search, Bot, Users];
+const HERO_SIGNAL_KEYS = [
+  "landing.boardStream1",
+  "landing.boardStream2",
+  "landing.boardStream3",
+] as const;
+const PIPELINE_STAGE_KEYS = [
+  "landing.stage1",
+  "landing.stage2",
+  "landing.stage3",
+  "landing.stage4",
+  "landing.stage5",
+  "landing.stage6",
+] as const;
 
 export function LandingPage() {
-  const { t, locale, setLocale } = useI18n();
+  const { t, locale } = useI18n();
   const { data: siteStats } = useSiteStats();
   const numberFormatter = new Intl.NumberFormat(locale);
+  const featuredBlogArticle = BLOG_ARTICLES[0]!;
 
-  useEffect(() => {
-    const title = "OpenCMO | Open-Source AI CMO for SEO, GEO, SERP, and Community Monitoring";
-    const description = "OpenCMO helps teams monitor SEO, GEO visibility, SERP keywords, and community discussions from one open-source workspace.";
-    const previousTitle = document.title;
-    const descriptionMeta = document.querySelector('meta[name="description"]');
-    const robotsMeta = document.querySelector('meta[name="robots"]');
-    const previousDescription = descriptionMeta?.getAttribute("content") ?? null;
-    const previousRobots = robotsMeta?.getAttribute("content") ?? null;
-
-    document.title = title;
-    if (descriptionMeta) {
-      descriptionMeta.setAttribute("content", description);
-    }
-    if (robotsMeta) {
-      robotsMeta.setAttribute("content", "index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1");
-    }
-
-    return () => {
-      document.title = previousTitle;
-      if (descriptionMeta && previousDescription) {
-        descriptionMeta.setAttribute("content", previousDescription);
-      }
-      if (robotsMeta && previousRobots) {
-        robotsMeta.setAttribute("content", previousRobots);
-      }
-    };
-  }, []);
-
-  const nextLocale = () => {
-    const idx = LOCALE_CYCLE.indexOf(locale);
-    const next = LOCALE_CYCLE[((idx === -1 ? 0 : idx) + 1) % LOCALE_CYCLE.length] as Locale;
-    setLocale(next);
-  };
-
-  const capabilities = [
-    {
-      icon: Search,
-      title: t("welcome.featureSeo"),
-      description: t("landing.capabilitySeo"),
-      accent: "bg-sky-50 text-sky-600",
-    },
-    {
-      icon: Bot,
-      title: t("welcome.featureGeo"),
-      description: t("landing.capabilityGeo"),
-      accent: "bg-emerald-50 text-emerald-600",
-    },
-    {
-      icon: Users,
-      title: t("welcome.featureCommunity"),
-      description: t("landing.capabilityCommunity"),
-      accent: "bg-amber-50 text-amber-600",
-    },
-  ];
-
-  const proofPoints = [
-    {
-      icon: Compass,
-      title: t("landing.proofResearchTitle"),
-      description: t("landing.proofResearchDesc"),
-    },
-    {
-      icon: ShieldCheck,
-      title: t("landing.proofCrawlerTitle"),
-      description: t("landing.proofCrawlerDesc"),
-    },
-    {
-      icon: Globe2,
-      title: t("landing.proofWorkflowTitle"),
-      description: t("landing.proofWorkflowDesc"),
-    },
-  ];
+  usePageMetadata({
+    title: t("landing.metaTitle"),
+    description: t("landing.metaDescription"),
+    canonicalPath: "/",
+  });
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_45%,#f8fafc_100%)] text-slate-900">
-      <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 lg:px-8">
-          <Link to="/" className="flex items-center gap-3 text-slate-900">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
-              <Sparkles size={18} />
-            </div>
-            <div>
-              <p className="text-base font-semibold tracking-tight">OpenCMO</p>
-              <p className="text-xs text-slate-500">{t("landing.headerTagline")}</p>
-            </div>
-          </Link>
+    <div className="min-h-screen bg-[#f6efe5] text-slate-950">
+      <PublicSiteHeader items={PUBLIC_HOME_NAV} theme="dark" />
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={nextLocale}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:text-slate-900"
+      <main className="pb-16">
+        <section className="relative overflow-hidden bg-[#08141f] text-white">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(201,111,69,0.3),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(134,200,188,0.22),transparent_22%),linear-gradient(135deg,#08141f_0%,#0c2538_44%,#08141f_100%)]" />
+          <div className="absolute -left-12 top-24 h-64 w-64 rounded-full bg-[#c96f45]/20 blur-3xl animate-float-slow" />
+          <div className="absolute bottom-6 right-[10%] h-72 w-72 rounded-full bg-[#86c8bc]/16 blur-3xl animate-float-slower" />
+          <div className="absolute inset-x-0 bottom-0 h-px bg-white/12" />
+
+          <div className="relative mx-auto grid min-h-[calc(100svh-80px)] max-w-7xl gap-10 px-4 py-14 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] lg:px-8 lg:py-20">
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col justify-center"
             >
-              {LOCALE_LABELS[locale]}
-            </button>
-            <a
-              href={GITHUB_REPO}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-900 sm:inline-flex"
-            >
-              {t("siteFooter.sourceCode")}
-              <ExternalLink size={14} />
-            </a>
-            <Link
-              to="/workspace"
-              className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-            >
-              {t("landing.primaryCta")}
-              <ArrowRight size={15} />
-            </Link>
-          </div>
-        </div>
-      </header>
+              <p className="inline-flex w-fit rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-[#f3dcc9]">
+                {t("landing.heroEyebrow")}
+              </p>
+              <h1 className="font-display mt-6 max-w-5xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[4.5rem] lg:leading-[0.98]">
+                {t("landing.heroTitle")}
+              </h1>
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-white/72 sm:text-xl">
+                {t("landing.heroSubtitle")}
+              </p>
 
-      <main className="mx-auto max-w-6xl px-4 pb-16 pt-10 lg:px-8 lg:pt-16">
-        <section className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-start">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700">
-              <Sparkles size={16} />
-              {t("landing.badge")}
-            </div>
-            <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              {t("landing.title")}
-            </h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600 sm:text-xl">
-              {t("landing.subtitle")}
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                to="/workspace"
-                className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-              >
-                {t("landing.primaryCta")}
-                <ArrowRight size={16} />
-              </Link>
-              <a
-                href={GITHUB_REPO}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-900"
-              >
-                {t("landing.secondaryCta")}
-                <ExternalLink size={16} />
-              </a>
-            </div>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  {t("siteFooter.totalVisits")}
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">
-                  {numberFormatter.format(siteStats?.total_visits ?? 0)}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                  {t("siteFooter.uniqueVisitors")}
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">
-                  {numberFormatter.format(siteStats?.unique_visitors ?? 0)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-slate-200/80 bg-white/90 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-              {t("landing.crawlerTitle")}
-            </p>
-            <p className="mt-3 text-base leading-7 text-slate-600">
-              {t("landing.crawlerBody")}
-            </p>
-            <div className="mt-6 space-y-3">
-              {CRAWLER_BULLET_KEYS.map((key, index) => (
-                <div
-                  key={key}
-                  className="flex items-start gap-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700"
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  to="/workspace"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#f7ecde] px-5 py-3 text-sm font-semibold text-[#082032] transition-colors hover:bg-white"
                 >
-                  <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
-                    {index + 1}
-                  </div>
-                  <p>{t(key)}</p>
+                  {t("landing.primaryCta")}
+                  <ArrowRight size={16} />
+                </Link>
+                <Link
+                  to="/blog"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/8 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-white/28 hover:bg-white/12"
+                >
+                  {t("landing.blogCta")}
+                </Link>
+              </div>
+
+              <div className="mt-10 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-[1.75rem] border border-white/10 bg-white/7 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/44">
+                    {t("siteFooter.totalVisits")}
+                  </p>
+                  <p className="mt-3 font-display text-3xl font-semibold tracking-tight text-white">
+                    {numberFormatter.format(siteStats?.total_visits ?? 0)}
+                  </p>
                 </div>
+                <div className="rounded-[1.75rem] border border-white/10 bg-white/7 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/44">
+                    {t("landing.metricPipelineLabel")}
+                  </p>
+                  <p className="mt-3 font-display text-3xl font-semibold tracking-tight text-white">
+                    {t("landing.metricPipelineValue")}
+                  </p>
+                </div>
+                <div className="rounded-[1.75rem] border border-white/10 bg-white/7 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/44">
+                    {t("landing.metricChannelsLabel")}
+                  </p>
+                  <p className="mt-3 font-display text-3xl font-semibold tracking-tight text-white">
+                    {t("landing.metricChannelsValue")}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.85, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+              className="relative flex items-center"
+            >
+              <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/12 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6 shadow-[0_28px_100px_rgba(0,0,0,0.3)]">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(201,111,69,0.18),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent_64%)]" />
+                <div className="relative">
+                  <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#f3dcc9]">
+                    {t("landing.signalBoardEyebrow")}
+                  </p>
+                  <div className="mt-5 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+                    <div className="space-y-4">
+                      <div className="rounded-[1.6rem] border border-white/10 bg-[#08141f]/60 p-5">
+                        <p className="text-sm font-semibold text-white">
+                          {t("landing.signalBoardTitle")}
+                        </p>
+                        <p className="mt-2 text-sm leading-7 text-white/68">
+                          {t("landing.signalBoardSummary")}
+                        </p>
+                      </div>
+                      <div className="rounded-[1.6rem] border border-white/10 bg-[#08141f]/60 p-5">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                          <Radar size={16} className="text-[#86c8bc]" />
+                          <span>{t("landing.boardStreamTitle")}</span>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                          {HERO_SIGNAL_KEYS.map((key, index) => {
+                            const Icon = HERO_ICONS[index] ?? Search;
+                            return (
+                              <div
+                                key={key}
+                                className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm leading-6 text-white/72"
+                              >
+                                <Icon size={16} className="mt-1 text-[#f3dcc9]" />
+                                <p>{t(key)}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.6rem] border border-white/10 bg-[#08141f]/60 p-5">
+                      <p className="text-sm font-semibold text-white">
+                        {t("landing.boardStagesTitle")}
+                      </p>
+                      <div className="mt-4 space-y-3">
+                        {PIPELINE_STAGE_KEYS.map((key, index) => (
+                          <div
+                            key={key}
+                            className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3"
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white/80">
+                              0{index + 1}
+                            </div>
+                            <p className="text-sm font-medium text-white/74">{t(key)}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-2xl bg-white/[0.04] p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">
+                            {t("siteFooter.uniqueVisitors")}
+                          </p>
+                          <p className="mt-2 font-display text-2xl font-semibold text-white">
+                            {numberFormatter.format(siteStats?.unique_visitors ?? 0)}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-white/[0.04] p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">
+                            {t("landing.metricOutputLabel")}
+                          </p>
+                          <p className="mt-2 font-display text-2xl font-semibold text-white">
+                            {t("landing.metricOutputValue")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        <section id="platform" className="mx-auto max-w-7xl px-4 pt-16 lg:px-8">
+          <SectionReveal>
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.26em] text-[#c96f45]">
+                {t("landing.platformEyebrow")}
+              </p>
+              <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                {t("landing.platformTitle")}
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-700">
+                {t("landing.platformSubtitle")}
+              </p>
+            </div>
+          </SectionReveal>
+
+          <div className="mt-10 divide-y divide-black/8 rounded-[2rem] border border-black/8 bg-white/70 shadow-[0_18px_60px_rgba(8,32,50,0.05)] backdrop-blur">
+            {LANDING_PLATFORM_ITEMS.map((item, index) => (
+              <SectionReveal key={item.title} delay={index * 0.06}>
+                <article className="grid gap-4 px-6 py-6 md:grid-cols-[72px_minmax(0,220px)_minmax(0,1fr)] md:px-8">
+                  <p className="font-display text-4xl font-semibold tracking-tight text-[#c96f45]">
+                    0{index + 1}
+                  </p>
+                  <h3 className="font-display text-2xl font-semibold tracking-tight text-slate-950">
+                    {t(item.title)}
+                  </h3>
+                  <p className="max-w-2xl text-base leading-8 text-slate-700">
+                    {t(item.description)}
+                  </p>
+                </article>
+              </SectionReveal>
+            ))}
+          </div>
+        </section>
+
+        <section id="workflow" className="mx-auto max-w-7xl px-4 pt-16 lg:px-8">
+          <SectionReveal>
+            <div className="overflow-hidden rounded-[2.4rem] border border-black/8 bg-[#efe5d6] shadow-[0_22px_70px_rgba(8,32,50,0.08)]">
+              <div className="grid gap-8 px-6 py-8 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:px-8 lg:py-10">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-[0.26em] text-[#c96f45]">
+                    {t("landing.workflowEyebrow")}
+                  </p>
+                  <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                    {t("landing.workflowTitle")}
+                  </h2>
+                  <p className="mt-4 max-w-xl text-base leading-8 text-slate-700">
+                    {t("landing.workflowSubtitle")}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  {LANDING_WORKFLOW_STEPS.map((step, index) => (
+                    <motion.article
+                      key={step.title}
+                      initial={{ opacity: 0, x: 24 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, amount: 0.3 }}
+                      transition={{ duration: 0.55, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                      className="grid gap-4 rounded-[1.6rem] border border-black/8 bg-white/75 px-5 py-5 sm:grid-cols-[64px_minmax(0,1fr)]"
+                    >
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#082032] text-sm font-semibold text-white">
+                        0{index + 1}
+                      </div>
+                      <div>
+                        <h3 className="font-display text-2xl font-semibold tracking-tight text-slate-950">
+                          {t(step.title)}
+                        </h3>
+                        <p className="mt-2 text-base leading-7 text-slate-700">
+                          {t(step.description)}
+                        </p>
+                      </div>
+                    </motion.article>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SectionReveal>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pt-16 lg:px-8">
+          <SectionReveal>
+            <div className="flex flex-col gap-4 border-b border-black/8 pb-8 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-sm font-semibold uppercase tracking-[0.26em] text-[#c96f45]">
+                  {t("landing.blogPreviewEyebrow")}
+                </p>
+                <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                  {t("landing.blogPreviewTitle")}
+                </h2>
+                <p className="mt-4 text-base leading-8 text-slate-700">
+                  {t("landing.blogPreviewSubtitle")}
+                </p>
+              </div>
+
+              <Link
+                to="/blog"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition-colors hover:text-slate-950"
+              >
+                {t("landing.blogPreviewCta")}
+                <ArrowRight size={15} />
+              </Link>
+            </div>
+          </SectionReveal>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+            <SectionReveal>
+              <Link
+                to={`/blog#${featuredBlogArticle.slug}`}
+                className={`group relative overflow-hidden rounded-[2rem] border border-black/8 bg-gradient-to-br p-6 shadow-[0_18px_60px_rgba(8,32,50,0.08)] transition-transform duration-300 hover:-translate-y-1 ${featuredBlogArticle.accentClass}`}
+              >
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.42),rgba(255,255,255,0.82))]" />
+                <div className="relative max-w-2xl">
+                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
+                    {t(featuredBlogArticle.category)}
+                  </p>
+                  <h3 className="font-display mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                    {t(featuredBlogArticle.title)}
+                  </h3>
+                  <p className="mt-4 text-base leading-8 text-slate-700">
+                    {t(featuredBlogArticle.summary)}
+                  </p>
+                  <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                    {featuredBlogArticle.takeawayKeys.map((key) => (
+                      <div key={key} className="rounded-2xl border border-black/8 bg-white/72 p-4 text-sm leading-6 text-slate-700">
+                        {t(key)}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    {t("blog.readArticleCta")}
+                    <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </Link>
+            </SectionReveal>
+
+            <div className="space-y-4">
+              {BLOG_ARTICLES.slice(1).map((article, index) => (
+                <SectionReveal key={article.slug} delay={index * 0.08}>
+                  <Link
+                    to={`/blog#${article.slug}`}
+                    className={`group block overflow-hidden rounded-[2rem] border border-black/8 bg-gradient-to-br p-6 shadow-[0_18px_60px_rgba(8,32,50,0.06)] transition-transform duration-300 hover:-translate-y-1 ${article.accentClass}`}
+                  >
+                    <div className="rounded-[1.4rem] bg-white/78 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">
+                        {t(article.category)}
+                      </p>
+                      <h3 className="font-display mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+                        {t(article.title)}
+                      </h3>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">
+                        {t(article.summary)}
+                      </p>
+                      <div className="mt-5 flex items-center justify-between text-sm font-semibold text-slate-700">
+                        <span>{t(article.readTime)}</span>
+                        <span className="inline-flex items-center gap-2 text-slate-900">
+                          {t("blog.readArticleCta")}
+                          <ArrowRight size={15} className="transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                </SectionReveal>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mt-16">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-              {t("landing.capabilitiesTitle")}
-            </h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              {t("landing.capabilitiesSubtitle")}
-            </p>
-          </div>
+        <section id="faq" className="mx-auto max-w-7xl px-4 pt-16 lg:px-8">
+          <SectionReveal>
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.26em] text-[#c96f45]">
+                {t("landing.navFaq")}
+              </p>
+              <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                {t("landing.faqTitle")}
+              </h2>
+            </div>
+          </SectionReveal>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {capabilities.map((capability) => (
-              <article
-                key={capability.title}
-                className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
-              >
-                <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${capability.accent}`}>
-                  <capability.icon size={22} />
+          <div className="mt-8 divide-y divide-black/8 rounded-[2rem] border border-black/8 bg-white/75 shadow-[0_18px_60px_rgba(8,32,50,0.05)]">
+            {LANDING_FAQS.map((item, index) => (
+              <SectionReveal key={item.question} delay={index * 0.05}>
+                <article className="grid gap-4 px-6 py-6 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)] md:px-8">
+                  <h3 className="font-display text-2xl font-semibold tracking-tight text-slate-950">
+                    {t(item.question)}
+                  </h3>
+                  <p className="max-w-3xl text-base leading-8 text-slate-700">
+                    {t(item.answer)}
+                  </p>
+                </article>
+              </SectionReveal>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pt-16 lg:px-8">
+          <SectionReveal>
+            <div className="overflow-hidden rounded-[2.4rem] border border-black/8 bg-[#082032] px-6 py-8 text-white shadow-[0_24px_90px_rgba(8,32,50,0.18)] sm:px-8 sm:py-10">
+              <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <div className="max-w-3xl">
+                  <p className="text-sm font-semibold uppercase tracking-[0.26em] text-[#f3dcc9]">
+                    {t("landing.finalEyebrow")}
+                  </p>
+                  <h2 className="font-display mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
+                    {t("landing.finalTitle")}
+                  </h2>
+                  <p className="mt-4 text-base leading-8 text-white/72">
+                    {t("landing.finalSubtitle")}
+                  </p>
                 </div>
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">
-                  {capability.title}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  {capability.description}
-                </p>
-              </article>
-            ))}
-          </div>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    to="/workspace"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#f7ecde] px-5 py-3 text-sm font-semibold text-[#082032] transition-colors hover:bg-white"
+                  >
+                    {t("landing.primaryCta")}
+                    <ArrowRight size={16} />
+                  </Link>
+                  <Link
+                    to="/blog"
+                    className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/8 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-white/28 hover:bg-white/12"
+                  >
+                    {t("landing.blogCta")}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </SectionReveal>
         </section>
 
-        <section className="mt-16 rounded-[2rem] border border-slate-200/80 bg-slate-900 px-6 py-8 text-white shadow-[0_24px_80px_rgba(15,23,42,0.14)] sm:px-8">
-          <div className="max-w-3xl">
-            <h2 className="text-3xl font-semibold tracking-tight">
-              {t("landing.proofTitle")}
-            </h2>
-            <p className="mt-4 text-base leading-7 text-slate-300">
-              {t("landing.proofSubtitle")}
-            </p>
-          </div>
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {proofPoints.map((item) => (
-              <article
-                key={item.title}
-                className="rounded-3xl border border-white/10 bg-white/5 p-5"
-              >
-                <item.icon size={20} className="text-indigo-300" />
-                <h3 className="mt-4 text-lg font-semibold text-white">{item.title}</h3>
-                <p className="mt-2 text-sm leading-7 text-slate-300">{item.description}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-16">
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-            {t("landing.faqTitle")}
-          </h2>
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {FAQ_ITEMS.map((item) => (
-              <article key={item.question} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  {t(item.question)}
-                </h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">
-                  {t(item.answer)}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-16 rounded-[2rem] border border-slate-200 bg-white px-6 py-8 shadow-sm sm:px-8">
-          <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-            {t("landing.finalTitle")}
-          </h2>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-            {t("landing.finalSubtitle")}
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              to="/workspace"
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-            >
-              {t("landing.primaryCta")}
-              <ArrowRight size={16} />
-            </Link>
-            <a
-              href={GITHUB_REPO}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-900"
-            >
-              {t("landing.secondaryCta")}
-              <ExternalLink size={16} />
-            </a>
-          </div>
-        </section>
-
-        <SiteFooter />
+        <div className="mx-auto max-w-7xl px-4 pt-16 lg:px-8">
+          <SiteFooter />
+        </div>
       </main>
     </div>
   );

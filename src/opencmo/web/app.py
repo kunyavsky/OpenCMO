@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import uuid
 from pathlib import Path
 
@@ -26,6 +27,88 @@ _SPA_DIR = _HERE.parent.parent.parent / "frontend" / "dist"  # <repo>/frontend/d
 app = FastAPI(title="OpenCMO Dashboard")
 app.mount("/static", StaticFiles(directory=str(_HERE / "static")), name="static")
 logger = logging.getLogger(__name__)
+
+_BLOG_STATIC_SITE_COPY = """
+<main id="static-site-copy">
+  <header>
+    <p>OpenCMO Blog</p>
+    <h1>Playbooks, explainers, and operating notes for modern visibility teams</h1>
+    <p>
+      The OpenCMO blog explains how the workspace connects SEO audits, GEO visibility,
+      SERP tracking, community monitoring, and growth execution in one operating system.
+    </p>
+  </header>
+  <section>
+    <h2>Featured reads</h2>
+    <ul>
+      <li>What an AI CMO workspace should actually do</li>
+      <li>Why SEO, GEO, SERP, and community signals belong in one loop</li>
+      <li>How to make your site readable to Google and AI agents</li>
+    </ul>
+  </section>
+  <section>
+    <h2>Why this page exists</h2>
+    <p>
+      The blog is part of the public product surface. It helps human readers,
+      search engines, and AI agents understand what OpenCMO does without entering
+      the private workspace routes.
+    </p>
+  </section>
+</main>
+""".strip()
+
+
+def _apply_public_route_metadata(html: str, full_path: str) -> str:
+    normalized = full_path.strip("/")
+    if normalized != "blog":
+        return html
+
+    replacements = [
+        (
+            r"<title>.*?</title>",
+            "<title>OpenCMO Blog | Notes on SEO, GEO, AI Visibility, and Growth Operations</title>",
+        ),
+        (
+            r'<meta\s+name="description"\s+content="[^"]*"\s*/?>',
+            '<meta name="description" content="Read OpenCMO&#39;s public notes on AI CMO workflows, crawler-readable sites, GEO strategy, SEO operations, and community-aware growth." />',
+        ),
+        (
+            r'<link\s+rel="canonical"\s+href="[^"]*"\s*/?>',
+            '<link rel="canonical" href="https://www.aidcmo.com/blog" />',
+        ),
+        (
+            r'<meta\s+property="og:title"\s+content="[^"]*"\s*/?>',
+            '<meta property="og:title" content="OpenCMO Blog | Notes on SEO, GEO, AI Visibility, and Growth Operations" />',
+        ),
+        (
+            r'<meta\s+property="og:description"\s+content="[^"]*"\s*/?>',
+            '<meta property="og:description" content="Read public notes on AI CMO workflows, crawler-readable sites, GEO strategy, and growth operations." />',
+        ),
+        (
+            r'<meta\s+property="og:url"\s+content="[^"]*"\s*/?>',
+            '<meta property="og:url" content="https://www.aidcmo.com/blog" />',
+        ),
+        (
+            r'<meta\s+name="twitter:title"\s+content="[^"]*"\s*/?>',
+            '<meta name="twitter:title" content="OpenCMO Blog | Notes on SEO, GEO, AI Visibility, and Growth Operations" />',
+        ),
+        (
+            r'<meta\s+name="twitter:description"\s+content="[^"]*"\s*/?>',
+            '<meta name="twitter:description" content="Read public notes on AI CMO workflows, crawler-readable sites, GEO strategy, and community-aware growth." />',
+        ),
+    ]
+
+    rendered = html
+    for pattern, replacement in replacements:
+        rendered = re.sub(pattern, replacement, rendered, count=1, flags=re.IGNORECASE)
+
+    return re.sub(
+        r'<main id="static-site-copy">.*?</main>',
+        _BLOG_STATIC_SITE_COPY,
+        rendered,
+        count=1,
+        flags=re.DOTALL,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -226,8 +309,10 @@ async def spa_catchall(request: Request, full_path: str = ""):
     except Exception:
         logger.exception("Failed to record site visit counters")
 
+    rendered_html = _apply_public_route_metadata(index.read_text(), full_path)
+
     # SPA fallback — always return index.html
-    response = HTMLResponse(index.read_text())
+    response = HTMLResponse(rendered_html)
     if new_visitor_id:
         response.set_cookie(
             "opencmo_visitor_id",
