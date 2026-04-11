@@ -1256,7 +1256,7 @@ def test_spa_catchall_blog_route_injects_public_metadata(client, tmp_path):
         assert resp.status_code == 200
         assert "OpenCMO Blog | Notes on SEO, GEO, AI Visibility, and Growth Operations" in resp.text
         assert 'href="https://www.aidcmo.com/blog"' in resp.text
-        assert "Playbooks, explainers, and operating notes for modern visibility teams" in resp.text
+        assert "A public field guide to what OpenCMO is, who it is for, and how the system should be used" in resp.text
 
 
 def test_spa_catchall_no_dist(client, tmp_path):

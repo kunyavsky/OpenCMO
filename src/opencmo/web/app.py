@@ -32,24 +32,26 @@ _BLOG_STATIC_SITE_COPY = """
 <main id="static-site-copy">
   <header>
     <p>OpenCMO Blog</p>
-    <h1>Playbooks, explainers, and operating notes for modern visibility teams</h1>
+    <h1>A public field guide to what OpenCMO is, who it is for, and how the system should be used</h1>
     <p>
-      The OpenCMO blog explains how the workspace connects SEO audits, GEO visibility,
-      SERP tracking, community monitoring, and growth execution in one operating system.
+      The OpenCMO blog explains why the workspace exists, when it becomes worth adopting,
+      how the first 30 days should run, and which technical choices make the public site
+      readable to both people and machines.
     </p>
   </header>
   <section>
-    <h2>Featured reads</h2>
+    <h2>Start with these notes</h2>
     <ul>
-      <li>What an AI CMO workspace should actually do</li>
-      <li>Why SEO, GEO, SERP, and community signals belong in one loop</li>
+      <li>Who should use OpenCMO, and when it starts paying for itself</li>
+      <li>Your first 30 days with OpenCMO: a practical rollout plan</li>
+      <li>Why we refused to build another marketing dashboard</li>
       <li>How to make your site readable to Google and AI agents</li>
     </ul>
   </section>
   <section>
     <h2>Why this page exists</h2>
     <p>
-      The blog is part of the public product surface. It helps human readers,
+      The blog is part of the public product surface. It helps buyers, operators,
       search engines, and AI agents understand what OpenCMO does without entering
       the private workspace routes.
     </p>
