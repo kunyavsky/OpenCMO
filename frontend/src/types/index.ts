@@ -335,6 +335,9 @@ export interface ProjectSummary {
   } | null;
   latest_monitoring?: MonitoringSummary | null;
   latest_reports?: LatestReports;
+  keyword_count?: number;
+  competitor_count?: number;
+  pending_approvals?: number;
 }
 
 export type ReportKind = "strategic" | "periodic";

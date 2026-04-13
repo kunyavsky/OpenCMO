@@ -11,6 +11,7 @@ import { CampaignTimeline } from "../components/project/CampaignTimeline";
 import { ActionFeed } from "../components/project/ActionFeed";
 import { InsightBanner } from "../components/dashboard/InsightBanner";
 import { useI18n } from "../i18n";
+import { ProjectCommandCenter } from "../components/project/ProjectCommandCenter";
 
 export function ProjectPage() {
   const { id } = useParams();
@@ -22,7 +23,16 @@ export function ProjectPage() {
   if (error) return <ErrorAlert message={error.message} />;
   if (!data) return <ErrorAlert message={t("common.projectNotFound")} />;
 
-  const { project, latest, previous, latest_monitoring, is_paused } = data;
+  const {
+    project,
+    latest,
+    previous,
+    latest_monitoring,
+    latest_reports,
+    is_paused,
+    competitor_count,
+    pending_approvals,
+  } = data;
 
   return (
     <div>
@@ -30,12 +40,23 @@ export function ProjectPage() {
       <InsightBanner projectId={projectId} />
       <ProjectTabs projectId={projectId} />
 
-      {/* Action Feed — the primary "what to do" section */}
-      <ActionFeed projectId={projectId} />
+      <div className="mt-6">
+        <ProjectCommandCenter
+          projectId={projectId}
+          latest={latest}
+          latestMonitoring={latest_monitoring}
+          latestReports={latest_reports}
+          competitorCount={competitor_count}
+          pendingApprovals={pending_approvals}
+        />
+      </div>
 
-      {/* Score Panel — compact summary bar below action feed */}
       <div className="mt-6">
         <ScorePanel latest={latest} previous={previous} latestMonitoring={latest_monitoring} />
+      </div>
+
+      <div className="mt-6">
+        <ActionFeed projectId={projectId} />
       </div>
 
       <NextActions projectId={projectId} />

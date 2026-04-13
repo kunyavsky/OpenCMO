@@ -7,7 +7,7 @@ import { es } from "./locales/es";
 
 export type Locale = "en" | "zh" | "ja" | "ko" | "es";
 
-const dictionaries: Record<Locale, Record<TranslationKey, string>> = { en, zh, ja, ko, es };
+const dictionaries: Record<Locale, Partial<Record<TranslationKey, string>>> = { en, zh, ja, ko, es };
 
 function getInitialLocale(): Locale {
   const stored = localStorage.getItem("opencmo_lang");
@@ -38,7 +38,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const t = useCallback(
     (key: TranslationKey, params?: Record<string, string | number>) => {
-      let text: string = dictionaries[locale][key];
+      let text = dictionaries[locale][key] ?? en[key];
       if (params) {
         for (const [k, v] of Object.entries(params)) {
           text = text.replaceAll(`{{${k}}}`, String(v));
