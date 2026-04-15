@@ -15,7 +15,12 @@ export interface SiteStats {
 }
 
 export interface LatestScans {
-  seo: { scanned_at: string; score: number | null } | null;
+  seo: {
+    scanned_at: string;
+    score: number | null;
+    performance_score?: number | null;
+    health_score?: number | null;
+  } | null;
   geo: { scanned_at: string; score: number } | null;
   community: { scanned_at: string; total_hits: number } | null;
   serp: SerpSnapshot[];
@@ -229,6 +234,7 @@ export interface SeoScan {
   has_robots_txt: boolean | null;
   has_sitemap: boolean | null;
   has_schema_org: boolean | null;
+  seo_health_score: number | null;
 }
 
 export interface GeoScan {
@@ -334,7 +340,12 @@ export interface ProjectSummary {
   is_paused: boolean;
   latest: LatestScans;
   previous: {
-    seo?: { scanned_at: string; score: number | null };
+    seo?: {
+      scanned_at: string;
+      score: number | null;
+      performance_score?: number | null;
+      health_score?: number | null;
+    };
     geo?: { scanned_at: string; score: number };
   } | null;
   latest_monitoring?: MonitoringSummary | null;
