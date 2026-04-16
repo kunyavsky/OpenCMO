@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -183,6 +184,178 @@ _LOCALE_NAMES = {
     "es": "Spanish",
 }
 
+_GLOBAL_CONTENT_MARKERS = (
+    "write",
+    "draft",
+    "generate",
+    "create",
+    "rewrite",
+    "polish",
+    "post",
+    "thread",
+    "tweet",
+    "article",
+    "launch copy",
+    "maker comment",
+    "content",
+    "文案",
+    "写",
+    "生成",
+    "改写",
+    "润色",
+    "发帖",
+    "帖子",
+    "文章",
+    "回答",
+    "笔记",
+)
+
+_STRATEGY_MARKERS = (
+    "strategy",
+    "plan",
+    "distribution",
+    "campaign",
+    "渠道",
+    "策略",
+    "规划",
+    "分发",
+    "矩阵",
+)
+
+_MULTI_PLATFORM_MARKERS = (
+    "all platforms",
+    "multi-channel",
+    "cross-channel",
+    "comprehensive",
+    "full platform",
+    "全平台",
+    "多平台",
+    "全渠道",
+    "矩阵",
+)
+
+_PLATFORM_SPECS = (
+    {
+        "agent_attr": "twitter_expert",
+        "platform_markers": ("twitter", "x ", "x/", "x平台", "推特", "tweet", "thread", "推文", "线程"),
+        "content_markers": ("tweet", "thread", "推文", "线程"),
+    },
+    {
+        "agent_attr": "linkedin_expert",
+        "platform_markers": ("linkedin", "领英"),
+        "content_markers": ("post", "帖子", "内容", "文案"),
+    },
+    {
+        "agent_attr": "reddit_expert",
+        "platform_markers": ("reddit", "subreddit", "r/"),
+        "content_markers": ("post", "title", "body", "帖子", "发帖", "标题", "正文"),
+        "exclude_markers": ("monitor", "scan", "discussion", "comment", "reply", "社区", "监控", "评论", "回复", "讨论"),
+    },
+    {
+        "agent_attr": "producthunt_expert",
+        "platform_markers": ("product hunt", "producthunt"),
+        "content_markers": ("launch", "tagline", "maker comment", "gallery", "发布", "上线", "slogan"),
+    },
+    {
+        "agent_attr": "zhihu_expert",
+        "platform_markers": ("知乎", "zhihu"),
+        "content_markers": ("文章", "回答", "问答", "专栏", "标题", "正文"),
+    },
+    {
+        "agent_attr": "xiaohongshu_expert",
+        "platform_markers": ("小红书", "xiaohongshu", "red note", "rednote", "xiaohongshu / red"),
+        "content_markers": ("笔记", "封面", "正文", "标题", "tags", "标签"),
+    },
+    {
+        "agent_attr": "hackernews_expert",
+        "platform_markers": ("hacker news", "hackernews", "show hn"),
+        "content_markers": ("show hn", "title", "body", "帖子", "标题", "正文"),
+    },
+    {
+        "agent_attr": "v2ex_expert",
+        "platform_markers": ("v2ex",),
+        "content_markers": ("帖子", "标题", "正文", "文案"),
+    },
+    {
+        "agent_attr": "juejin_expert",
+        "platform_markers": ("掘金", "juejin"),
+        "content_markers": ("文章", "标题", "正文", "教程"),
+    },
+    {
+        "agent_attr": "jike_expert",
+        "platform_markers": ("即刻", "jike"),
+        "content_markers": ("动态", "帖子", "文案", "内容"),
+    },
+    {
+        "agent_attr": "wechat_expert",
+        "platform_markers": ("微信公众号", "微信公众", "wechat"),
+        "content_markers": ("文章", "标题", "正文", "推文"),
+    },
+)
+
+
+def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
+    return any(marker in text for marker in markers)
+
+
+def _normalize_message_for_routing(message: str) -> str:
+    lowered = message.lower()
+    lowered = re.sub(r"\s+", " ", lowered)
+    return lowered
+
+
+def _resolve_direct_platform_agent(message: str):
+    normalized = _normalize_message_for_routing(message)
+    if _contains_any(normalized, _MULTI_PLATFORM_MARKERS):
+        return None
+
+    matches = []
+    for spec in _PLATFORM_SPECS:
+        if _contains_any(normalized, spec["platform_markers"]):
+            matches.append(spec)
+    if len(matches) != 1:
+        return None
+
+    spec = matches[0]
+    if _contains_any(normalized, tuple(spec.get("exclude_markers", ()))):
+        return None
+
+    content_markers = tuple(spec.get("content_markers", ())) + _GLOBAL_CONTENT_MARKERS
+    if not _contains_any(normalized, content_markers):
+        return None
+
+    if _contains_any(normalized, _STRATEGY_MARKERS) and not _contains_any(normalized, tuple(spec.get("content_markers", ()))):
+        return None
+
+    from opencmo.agents import (
+        hackernews_expert,
+        jike_expert,
+        juejin_expert,
+        linkedin_expert,
+        producthunt_expert,
+        reddit_expert,
+        twitter_expert,
+        v2ex_expert,
+        wechat_expert,
+        xiaohongshu_expert,
+        zhihu_expert,
+    )
+
+    agent_map = {
+        "twitter_expert": twitter_expert,
+        "linkedin_expert": linkedin_expert,
+        "reddit_expert": reddit_expert,
+        "producthunt_expert": producthunt_expert,
+        "zhihu_expert": zhihu_expert,
+        "xiaohongshu_expert": xiaohongshu_expert,
+        "hackernews_expert": hackernews_expert,
+        "v2ex_expert": v2ex_expert,
+        "juejin_expert": juejin_expert,
+        "jike_expert": jike_expert,
+        "wechat_expert": wechat_expert,
+    }
+    return agent_map[spec["agent_attr"]]
+
 
 @router.post("/chat")
 async def api_v1_chat(request: Request):
@@ -231,7 +404,8 @@ async def api_v1_chat(request: Request):
             from opencmo.agents.cmo import cmo_agent
             from opencmo.marketing_review import review_marketing_output_with_metadata
 
-            result = Runner.run_streamed(cmo_agent, input_items, max_turns=15)
+            selected_agent = _resolve_direct_platform_agent(message) or cmo_agent
+            result = Runner.run_streamed(selected_agent, input_items, max_turns=15)
 
             async for event in result.stream_events():
                 if event.type == "raw_response_event":
