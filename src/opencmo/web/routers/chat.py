@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import re
 
 from fastapi import APIRouter, Request
@@ -13,6 +15,11 @@ from opencmo import storage
 from opencmo.opportunities import build_project_opportunity_snapshot
 
 router = APIRouter(prefix="/api/v1")
+logger = logging.getLogger(__name__)
+
+_STREAM_FIRST_EVENT_TIMEOUT_SECONDS = 120.0
+_STREAM_IDLE_EVENT_TIMEOUT_SECONDS = 20.0
+_MARKETING_REVIEW_TIMEOUT_SECONDS = 30.0
 
 
 @router.get("/chat/context/{project_id}")
@@ -125,6 +132,27 @@ def _get_item_name(item) -> str:
     if raw is not None and hasattr(raw, "name"):
         return raw.name
     return getattr(item, "title", None) or "unknown"
+
+
+def _extract_assistant_text(items: list[dict]) -> str:
+    """Best-effort extraction of the last assistant text from persisted run items."""
+    for item in reversed(items):
+        if not isinstance(item, dict) or item.get("role") != "assistant":
+            continue
+        content = item.get("content", "")
+        if isinstance(content, str) and content.strip():
+            return content.strip()
+        if isinstance(content, list):
+            parts = []
+            for piece in content:
+                if isinstance(piece, dict):
+                    text = piece.get("text")
+                    if isinstance(text, str) and text:
+                        parts.append(text)
+            joined = "".join(parts).strip()
+            if joined:
+                return joined
+    return ""
 
 
 @router.post("/chat/sessions")
@@ -456,32 +484,65 @@ async def api_v1_chat(request: Request):
 
             selected_agent = _resolve_direct_platform_agent(message) or cmo_agent
             result = Runner.run_streamed(selected_agent, input_items, max_turns=15)
+            output_chunks: list[str] = []
+            stream_timed_out = False
+            stream = result.stream_events()
+            try:
+                while True:
+                    timeout = (
+                        _STREAM_IDLE_EVENT_TIMEOUT_SECONDS
+                        if output_chunks
+                        else _STREAM_FIRST_EVENT_TIMEOUT_SECONDS
+                    )
+                    try:
+                        event = await asyncio.wait_for(anext(stream), timeout=timeout)
+                    except StopAsyncIteration:
+                        break
+                    except asyncio.TimeoutError:
+                        if output_chunks:
+                            stream_timed_out = True
+                            logger.warning(
+                                "Chat stream idle timeout after %.1fs; finalizing partial output "
+                                "(session_id=%s, agent=%s)",
+                                timeout,
+                                session_id,
+                                selected_agent.name,
+                            )
+                            result.cancel()
+                            break
+                        raise TimeoutError(
+                            f"Chat stream timed out before first output after {timeout:.0f}s"
+                        )
 
-            async for event in result.stream_events():
-                if event.type == "raw_response_event":
-                    data = event.data
-                    if hasattr(data, "type") and data.type == "response.output_text.delta":
-                        yield f"data: {json.dumps({'type': 'delta', 'content': data.delta})}\n\n"
-                elif event.type == "agent_updated_stream_event":
-                    yield f"data: {json.dumps({'type': 'agent', 'name': event.new_agent.name})}\n\n"
-                elif event.type == "run_item_stream_event":
-                    name = event.name
-                    if name == "tool_called":
-                        yield f"data: {json.dumps({'type': 'tool_call', 'name': _get_item_name(event.item)})}\n\n"
-                    elif name == "tool_output":
-                        yield f"data: {json.dumps({'type': 'tool_done'})}\n\n"
-                    elif name == "handoff_requested":
-                        yield f"data: {json.dumps({'type': 'handoff', 'target': _get_item_name(event.item)})}\n\n"
-                    elif name == "handoff_occured":
-                        yield f"data: {json.dumps({'type': 'handoff_done'})}\n\n"
-                    elif name == "tool_search_called":
-                        yield f"data: {json.dumps({'type': 'tool_search'})}\n\n"
-                    elif name == "tool_search_output_created":
-                        yield f"data: {json.dumps({'type': 'tool_search_done'})}\n\n"
-                    elif name == "message_output_created":
-                        yield f"data: {json.dumps({'type': 'message_created'})}\n\n"
-                    elif name == "reasoning_item_created":
-                        yield f"data: {json.dumps({'type': 'reasoning'})}\n\n"
+                    if event.type == "raw_response_event":
+                        data = event.data
+                        if hasattr(data, "type") and data.type == "response.output_text.delta":
+                            delta = data.delta or ""
+                            if delta:
+                                output_chunks.append(delta)
+                            yield f"data: {json.dumps({'type': 'delta', 'content': delta})}\n\n"
+                    elif event.type == "agent_updated_stream_event":
+                        yield f"data: {json.dumps({'type': 'agent', 'name': event.new_agent.name})}\n\n"
+                    elif event.type == "run_item_stream_event":
+                        name = event.name
+                        if name == "tool_called":
+                            yield f"data: {json.dumps({'type': 'tool_call', 'name': _get_item_name(event.item)})}\n\n"
+                        elif name == "tool_output":
+                            yield f"data: {json.dumps({'type': 'tool_done'})}\n\n"
+                        elif name == "handoff_requested":
+                            yield f"data: {json.dumps({'type': 'handoff', 'target': _get_item_name(event.item)})}\n\n"
+                        elif name == "handoff_occured":
+                            yield f"data: {json.dumps({'type': 'handoff_done'})}\n\n"
+                        elif name == "tool_search_called":
+                            yield f"data: {json.dumps({'type': 'tool_search'})}\n\n"
+                        elif name == "tool_search_output_created":
+                            yield f"data: {json.dumps({'type': 'tool_search_done'})}\n\n"
+                        elif name == "message_output_created":
+                            yield f"data: {json.dumps({'type': 'message_created'})}\n\n"
+                        elif name == "reasoning_item_created":
+                            yield f"data: {json.dumps({'type': 'reasoning'})}\n\n"
+            finally:
+                await stream.aclose()
 
             # Stream finished — persist session state
             updated_items = result.to_input_list()
@@ -497,11 +558,35 @@ async def api_v1_chat(request: Request):
             ):
                 updated_items = updated_items[1:]
             agent_name = result.last_agent.name if result.last_agent else "CMO Agent"
-            review_result = await review_marketing_output_with_metadata(
-                agent_name=agent_name,
-                user_message=message,
-                output_text=result.final_output,
-            )
+            raw_output = ""
+            if isinstance(result.final_output, str):
+                raw_output = result.final_output.strip()
+            if not raw_output and output_chunks:
+                raw_output = "".join(output_chunks).strip()
+            if not raw_output:
+                raw_output = _extract_assistant_text(updated_items)
+            try:
+                review_result = await asyncio.wait_for(
+                    review_marketing_output_with_metadata(
+                        agent_name=agent_name,
+                        user_message=message,
+                        output_text=raw_output,
+                    ),
+                    timeout=_MARKETING_REVIEW_TIMEOUT_SECONDS,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Marketing review skipped after failure/timeout (session_id=%s, agent=%s): %s",
+                    session_id,
+                    agent_name,
+                    exc,
+                )
+                review_result = {
+                    "final_output": raw_output,
+                    "review_applied": False,
+                    "profile": None,
+                    "weak_points": [],
+                }
             final_output = review_result["final_output"]
             assistant_updated = False
             for item in reversed(updated_items):
@@ -512,7 +597,7 @@ async def api_v1_chat(request: Request):
             if final_output and not assistant_updated:
                 updated_items.append({"role": "assistant", "content": final_output})
             await chat_sessions.update_session(session_id, updated_items)
-            yield f"data: {json.dumps({'type': 'done', 'agent_name': agent_name, 'final_output': final_output, 'review_applied': review_result['review_applied'], 'review_profile': review_result['profile'], 'review_weak_points': review_result['weak_points']})}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'agent_name': agent_name, 'final_output': final_output, 'review_applied': review_result['review_applied'], 'review_profile': review_result['profile'], 'review_weak_points': review_result['weak_points'], 'stream_timed_out': stream_timed_out})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
