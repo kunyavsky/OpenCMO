@@ -237,7 +237,8 @@ _MULTI_PLATFORM_MARKERS = (
 _PLATFORM_SPECS = (
     {
         "agent_attr": "twitter_expert",
-        "platform_markers": ("twitter", "twitter/x", "x ", "x/", "x平台", "推特", "tweet", "thread", "推文", "线程"),
+        "platform_markers": ("twitter", "twitter/x", "x/", "x平台", "推特", "tweet", "thread", "推文", "线程"),
+        "platform_regexes": (r"(?<![a-z0-9])x(?![a-z0-9])",),
         "content_markers": ("tweet", "thread", "推文", "线程"),
     },
     {
