@@ -38,6 +38,10 @@ import re
 from contextvars import ContextVar, Token
 from typing import Any
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 _MODEL_DEFAULT = "gpt-5.4"

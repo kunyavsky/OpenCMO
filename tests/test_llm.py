@@ -45,8 +45,9 @@ class TestGetKey:
         })
         try:
             assert llm.get_key("OPENAI_API_KEY") == "valid"
-            assert llm.get_key("OPENAI_BASE_URL") is None
-            assert llm.get_key("EMPTY") is None
+            with patch.dict(os.environ, {}, clear=True):
+                assert llm.get_key("OPENAI_BASE_URL") is None
+                assert llm.get_key("EMPTY") is None
         finally:
             llm.reset_request_keys(token)
 
