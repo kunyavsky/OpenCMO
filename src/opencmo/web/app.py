@@ -24,7 +24,7 @@ from starlette.responses import StreamingResponse
 from opencmo import storage
 
 _HERE = Path(__file__).parent
-_SPA_DIR = _HERE.parent.parent.parent / "frontend" / "dist"  # <repo>/frontend/dist
+_SPA_DIR = Path(os.environ.get("OPENCMO_SPA_DIR", str(_HERE.parent.parent.parent / "frontend" / "dist")))
 
 app = FastAPI(title="OpenCMO Dashboard")
 app.mount("/static", StaticFiles(directory=str(_HERE / "static")), name="static")
