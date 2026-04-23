@@ -6,6 +6,7 @@ import asyncio
 import logging
 
 from opencmo import storage
+from opencmo.tools.browser_pool import browser_slot
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +85,9 @@ async def run_scheduled_scan(
             )
 
             async def _crawl():
-                async with AsyncWebCrawler() as crawler:
-                    return await crawler.arun(url=url)
+                async with browser_slot():
+                    async with AsyncWebCrawler() as crawler:
+                        return await crawler.arun(url=url)
 
             result = await asyncio.wait_for(_crawl(), timeout=90)
             parser = _SEOParser()

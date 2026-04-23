@@ -10,6 +10,7 @@ import httpx
 from agents import function_tool
 from crawl4ai import AsyncWebCrawler
 
+from opencmo.tools.browser_pool import browser_slot
 from opencmo.tools.crawl import _extract_markdown
 
 logger = logging.getLogger(__name__)
@@ -507,8 +508,9 @@ async def audit_page_seo(url: str) -> str:
     """
     try:
         async def _crawl():
-            async with AsyncWebCrawler() as crawler:
-                return await crawler.arun(url=url)
+            async with browser_slot():
+                async with AsyncWebCrawler() as crawler:
+                    return await crawler.arun(url=url)
 
         result = await asyncio.wait_for(_crawl(), timeout=90)
         parser = _SEOParser()

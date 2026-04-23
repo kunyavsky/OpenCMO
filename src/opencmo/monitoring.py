@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 from opencmo import llm, storage
 from opencmo.finding_contract import upgrade_legacy_finding
 from opencmo.finding_verifier import run_verifier_suite
+from opencmo.tools.browser_pool import browser_slot
 
 ProgressCallback = Callable[[dict], None]
 
@@ -239,8 +240,9 @@ async def _collect_signals(
             )
 
             async def _crawl_and_parse():
-                async with AsyncWebCrawler() as crawler:
-                    return await crawler.arun(url=url)
+                async with browser_slot():
+                    async with AsyncWebCrawler() as crawler:
+                        return await crawler.arun(url=url)
 
             result = await _asyncio.wait_for(_crawl_and_parse(), timeout=90)
             parser = _SEOParser()
