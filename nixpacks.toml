@@ -2,7 +2,11 @@
 nixPkgs = ['python3', 'gcc', 'nodejs_20']
 
 [phases.install]
-cmds = ['echo "skip"']
+cmds = [
+  'python3 -m venv /opt/venv',
+  '/opt/venv/bin/pip install -e ".[all]"',
+  'cd frontend && npm install && npm run build && cd ..'
+]
 
 [start]
-cmd = 'pip install -e ".[all]" && cd frontend && npm install && npm run build && cd .. && opencmo-web'
+cmd = '/opt/venv/bin/opencmo-web'
