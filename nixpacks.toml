@@ -8,10 +8,5 @@ cmds = [
   '/opt/venv/bin/pip install -e ".[all]"'
 ]
 
-[phases.build]
-cmds = [
-  'cd /app/frontend && npm install && npm run build'
-]
-
 [start]
-cmd = 'PYTHONPATH=/app/src /opt/venv/bin/opencmo-web'
+cmd = 'cd /app/frontend && npm install && npm run build && cd /app && PYTHONPATH=/app/src /opt/venv/bin/opencmo-web'
