@@ -1,16 +1,11 @@
 [phases.setup]
-nixPkgs = ['python3', 'gcc', 'nodejs_20']
+nixPkgs = ['python3', 'gcc']
 
 [phases.install]
 cmds = [
   'python3 -m venv /opt/venv',
   '/opt/venv/bin/pip install hatchling build setuptools',
   '/opt/venv/bin/pip install -e ".[all]"'
-]
-
-[phases.build]
-cmds = [
-  'cd /app/frontend && npm install && NODE_OPTIONS=--max-old-space-size=1024 npm run build'
 ]
 
 [start]
