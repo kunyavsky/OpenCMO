@@ -39,3 +39,5 @@ line-length = 120
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E501", "E402"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/opencmo"]
