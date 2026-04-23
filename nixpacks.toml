@@ -10,8 +10,7 @@ cmds = [
 
 [phases.build]
 cmds = [
-  'cd /app/frontend && npm install && npm run build',
-  'cp -r /app/frontend/dist /app/src/opencmo/web/static/dist'
+  'cd /app/frontend && npm install && npm run build'
 ]
 
 [start]
