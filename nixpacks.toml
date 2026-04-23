@@ -4,7 +4,8 @@ nixPkgs = ['python3', 'gcc', 'nodejs_20']
 [phases.install]
 cmds = [
   'python3 -m venv /opt/venv',
-  '/opt/venv/bin/pip install hatchling fastapi uvicorn jinja2 aiosqlite python-dotenv httpx openai-agents anthropic google-generativeai apscheduler praw tweepy tavily-python crawl4ai'
+  '/opt/venv/bin/pip install hatchling build setuptools',
+  '/opt/venv/bin/pip install -e ".[all]"'
 ]
 
 [phases.build]
@@ -13,4 +14,4 @@ cmds = [
 ]
 
 [start]
-cmd = '/opt/venv/bin/pip install -e ".[all]" --no-build-isolation && /opt/venv/bin/opencmo-web'
+cmd = '/opt/venv/bin/opencmo-web'
