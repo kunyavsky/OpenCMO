@@ -1,12 +1,12 @@
 """FastAPI web dashboard for OpenCMO — Jinja2 SSR + REST API + SPA mount.
-
+ 
 This module creates the ``app`` instance, registers auth middleware,
 includes all domain routers, and provides the SPA catch-all route and
 server entry point.
 """
-
+ 
 from __future__ import annotations
-
+ 
 import json
 import logging
 import os
@@ -14,25 +14,22 @@ import re
 import uuid
 from html import escape
 from pathlib import Path
-
+ 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import StreamingResponse
-
+ 
 from opencmo import storage
-
+ 
 _HERE = Path(__file__).parent
 _SPA_DIR = Path(os.environ.get("OPENCMO_SPA_DIR", str(_HERE.parent.parent.parent / "frontend" / "dist")))
-
+ 
 app = FastAPI(title="OpenCMO Dashboard")
 app.mount("/static", StaticFiles(directory=str(_HERE / "static")), name="static")
-_dist = Path(os.environ.get("OPENCMO_SPA_DIR", str(_HERE.parent.parent.parent / "frontend" / "dist")))
-if _dist.exists():
-    app.mount("/assets", StaticFiles(directory=str(_dist / "assets")), name="spa-assets")
 logger = logging.getLogger(__name__)
-
+ 
 _HOME_STATIC_SITE_COPY_BY_LOCALE = {
     "en": """
 <main id="static-site-copy">
@@ -136,7 +133,7 @@ _HOME_STATIC_SITE_COPY_BY_LOCALE = {
 </main>
 """.strip(),
 }
-
+ 
 _BLOG_STATIC_SITE_COPY_BY_LOCALE = {
     "en": """
 <main id="static-site-copy">
@@ -202,7 +199,7 @@ _BLOG_STATIC_SITE_COPY_BY_LOCALE = {
 </main>
 """.strip(),
 }
-
+ 
 _BLOG_ARTICLE_METADATA = [
     {
         "slug": "what-is-a-cmo",
@@ -431,28 +428,28 @@ _BLOG_ARTICLE_METADATA = [
         "thesis_zh": "第一个月最有效的顺序是：基线、叙事复核、优先级判断、执行闭环；其余都是第二位。",
     },
 ]
-
+ 
 _BLOG_ARTICLE_METADATA_BY_SLUG = {article["slug"]: article for article in _BLOG_ARTICLE_METADATA}
-
+ 
 def _localized_article_value(article: dict[str, object], field: str, locale: str) -> str:
     if locale == "zh":
         localized = article.get(f"{field}_zh")
         if isinstance(localized, str) and localized.strip():
             return localized
     return str(article[field])
-
-
+ 
+ 
 def _public_path(path: str, locale: str | None = None) -> str:
     normalized = path.strip("/")
     if locale:
         return f"/{locale}" if not normalized else f"/{locale}/{normalized}"
     return "/" if not normalized else f"/{normalized}"
-
-
+ 
+ 
 def _public_url(path: str, locale: str | None = None) -> str:
     return f'https://www.aidcmo.com{_public_path(path, locale)}'
-
-
+ 
+ 
 def _build_blog_json_ld(locale: str | None = None) -> str:
     localized = locale or "en"
     return json.dumps(
@@ -484,8 +481,8 @@ def _build_blog_json_ld(locale: str | None = None) -> str:
         },
         separators=(",", ":"),
     )
-
-
+ 
+ 
 def _build_blog_article_json_ld(article: dict[str, object], locale: str | None = None) -> str:
     localized = locale or "en"
     article_url = _public_url(str(article["path"]), locale)
@@ -510,8 +507,8 @@ def _build_blog_article_json_ld(article: dict[str, object], locale: str | None =
         },
         separators=(",", ":"),
     )
-
-
+ 
+ 
 def _render_blog_article_static_site_copy(article: dict[str, object], locale: str | None = None) -> str:
     localized = locale or "en"
     title = escape(_localized_article_value(article, "title", localized))
@@ -539,7 +536,7 @@ def _render_blog_article_static_site_copy(article: dict[str, object], locale: st
   </article>
 </main>
 """.strip()
-
+ 
 _SAMPLE_AUDIT_STATIC_SITE_COPY_BY_LOCALE = {
     "en": """
 <main id="static-site-copy">
@@ -598,8 +595,8 @@ _SAMPLE_AUDIT_STATIC_SITE_COPY_BY_LOCALE = {
 </main>
 """.strip(),
 }
-
-
+ 
+ 
 def _build_home_json_ld(locale: str | None = None) -> str:
     localized = locale or "en"
     return json.dumps(
@@ -643,8 +640,8 @@ def _build_home_json_ld(locale: str | None = None) -> str:
         },
         separators=(",", ":"),
     )
-
-
+ 
+ 
 def _build_sample_audit_json_ld(locale: str | None = None) -> str:
     localized = locale or "en"
     return json.dumps(
@@ -674,7 +671,7 @@ def _build_sample_audit_json_ld(locale: str | None = None) -> str:
         },
         separators=(",", ":"),
     )
-
+ 
 _APP_STATIC_SITE_COPY = """
 <main id="static-site-copy">
   <header>
@@ -696,13 +693,13 @@ _APP_STATIC_SITE_COPY = """
   </section>
 </main>
 """.strip()
-
-
+ 
+ 
 _CANONICAL_HOST_REDIRECTS = {
     "aidcmo.com": "www.aidcmo.com",
 }
-
-
+ 
+ 
 def _replace_metadata(rendered: str, replacements: list[tuple[str, str]]) -> str:
     for pattern, replacement in replacements:
         rendered = re.sub(
@@ -713,8 +710,8 @@ def _replace_metadata(rendered: str, replacements: list[tuple[str, str]]) -> str
             flags=re.IGNORECASE | re.DOTALL,
         )
     return rendered
-
-
+ 
+ 
 def _replace_static_site_copy(rendered: str, static_copy: str) -> str:
     return re.sub(
         r'<main id="static-site-copy">.*?</main>',
@@ -723,13 +720,13 @@ def _replace_static_site_copy(rendered: str, static_copy: str) -> str:
         count=1,
         flags=re.DOTALL,
     )
-
-
+ 
+ 
 def _replace_html_lang(rendered: str, locale: str | None) -> str:
     lang = _HREFLANG_BY_LOCALE.get(locale or "en", "en")
     return re.sub(r'<html\s+lang="[^"]*">', f'<html lang="{lang}">', rendered, count=1, flags=re.IGNORECASE)
-
-
+ 
+ 
 def _build_alternate_link_tags(path: str) -> str:
     return "".join(
         f'<link rel="alternate" hreflang="{href_lang}" href="{_public_url(path, locale)}" />'
@@ -739,8 +736,8 @@ def _build_alternate_link_tags(path: str) -> str:
             (_HREFLANG_BY_LOCALE["zh"], "zh"),
         ]
     )
-
-
+ 
+ 
 def _replace_canonical_and_alternates(rendered: str, canonical_url: str, path: str) -> str:
     replacement = f'<link rel="canonical" href="{canonical_url}" />{_build_alternate_link_tags(path)}'
     return re.sub(
@@ -750,8 +747,8 @@ def _replace_canonical_and_alternates(rendered: str, canonical_url: str, path: s
         count=1,
         flags=re.IGNORECASE,
     )
-
-
+ 
+ 
 def _split_public_locale(full_path: str) -> tuple[str | None, str]:
     normalized = full_path.strip("/")
     if not normalized:
@@ -760,8 +757,8 @@ def _split_public_locale(full_path: str) -> tuple[str | None, str]:
     if first in _SEO_PUBLIC_LOCALES:
         return first, rest[0] if rest else ""
     return None, normalized
-
-
+ 
+ 
 def _is_app_surface(full_path: str) -> bool:
     normalized = full_path.strip("/")
     if not normalized:
@@ -771,13 +768,13 @@ def _is_app_surface(full_path: str) -> bool:
         or normalized.startswith("projects/")
         or normalized == "projects"
     )
-
-
+ 
+ 
 def _apply_public_route_metadata(html: str, full_path: str) -> str:
     route_locale, normalized = _split_public_locale(full_path)
     locale_key = route_locale or "en"
     rendered = _replace_html_lang(html, route_locale)
-
+ 
     if _is_app_surface(normalized):
         canonical_url = f"https://www.aidcmo.com/{normalized}" if normalized else "https://www.aidcmo.com/"
         replacements = [
@@ -814,7 +811,7 @@ def _apply_public_route_metadata(html: str, full_path: str) -> str:
                 '<meta name="twitter:description" content="Private OpenCMO workspace route for projects, approvals, reports, and operator workflows." />',
             ),
         ]
-
+ 
         rendered = _replace_metadata(rendered, replacements)
         rendered = re.sub(
             r'<link\s+rel="canonical"\s+href="[^"]*"\s*/?>',
@@ -824,13 +821,13 @@ def _apply_public_route_metadata(html: str, full_path: str) -> str:
             flags=re.IGNORECASE,
         )
         return _replace_static_site_copy(rendered, _APP_STATIC_SITE_COPY)
-
+ 
     if normalized.startswith("blog/"):
         slug = normalized.split("/", 1)[1]
         article = _BLOG_ARTICLE_METADATA_BY_SLUG.get(slug)
         if not article:
             return rendered
-
+ 
         article_title = _localized_article_value(article, "title", locale_key)
         article_summary = _localized_article_value(article, "summary", locale_key)
         article_url = _public_url(str(article["path"]), route_locale)
@@ -873,11 +870,11 @@ def _apply_public_route_metadata(html: str, full_path: str) -> str:
                 f'<script type="application/ld+json">{article_json_ld}</script>',
             ),
         ]
-
+ 
         rendered = _replace_metadata(rendered, replacements)
         rendered = _replace_canonical_and_alternates(rendered, article_url, str(article["path"]))
         return _replace_static_site_copy(rendered, _render_blog_article_static_site_copy(article, route_locale))
-
+ 
     if normalized == "":
         title = (
             "OpenCMO | One System for Search, AI Visibility, and Growth Operations"
@@ -903,7 +900,7 @@ def _apply_public_route_metadata(html: str, full_path: str) -> str:
         rendered = _replace_metadata(rendered, replacements)
         rendered = _replace_canonical_and_alternates(rendered, canonical_url, "/")
         return _replace_static_site_copy(rendered, _HOME_STATIC_SITE_COPY_BY_LOCALE[locale_key])
-
+ 
     if normalized == "blog":
         title = (
             "OpenCMO Blog | CMO, Product Marketing, GTM, and AI CMO Field Guide"
@@ -929,7 +926,7 @@ def _apply_public_route_metadata(html: str, full_path: str) -> str:
         rendered = _replace_metadata(rendered, replacements)
         rendered = _replace_canonical_and_alternates(rendered, canonical_url, "/blog")
         return _replace_static_site_copy(rendered, _BLOG_STATIC_SITE_COPY_BY_LOCALE[locale_key])
-
+ 
     if normalized == "sample-audit":
         title = (
             "OpenCMO Sample Audit | Public walkthrough of a visibility operating report"
@@ -955,15 +952,15 @@ def _apply_public_route_metadata(html: str, full_path: str) -> str:
         rendered = _replace_metadata(rendered, replacements)
         rendered = _replace_canonical_and_alternates(rendered, canonical_url, "/sample-audit")
         return _replace_static_site_copy(rendered, _SAMPLE_AUDIT_STATIC_SITE_COPY_BY_LOCALE[locale_key])
-
+ 
     return rendered
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # Lifecycle hooks
 # ---------------------------------------------------------------------------
-
-
+ 
+ 
 @app.on_event("startup")
 async def _startup_fix_stale_expansions():
     """Mark any stale 'running' expansions as interrupted (from previous process)."""
@@ -974,15 +971,15 @@ async def _startup_fix_stale_expansions():
             logger.info("Fixed %d stale expansion(s) on startup", fixed)
     except Exception:
         pass  # table may not exist yet on first run
-
+ 
     # Load DB-stored API settings into os.environ so background workers can read them.
     from opencmo.config import apply_runtime_settings, configure_agent_tracing
     await apply_runtime_settings()
     logger.info("Runtime settings loaded from DB into environment")
     tracing_disabled = configure_agent_tracing()
     logger.info("Agents tracing %s", "disabled for custom provider" if tracing_disabled else "enabled")
-
-
+ 
+ 
 @app.on_event("startup")
 async def _startup_runtime_services():
     """Start optional runtime services after DB bootstrap."""
@@ -994,50 +991,50 @@ async def _startup_runtime_services():
         run_scan_executor,
     )
     from opencmo.background.worker import get_background_worker
-
+ 
     worker = get_background_worker()
     worker.register_executor("scan", run_scan_executor)
     worker.register_executor("report", run_report_executor)
     worker.register_executor("graph_expansion", run_graph_expansion_executor)
     worker.register_executor("github_enrich", run_github_enrich_executor)
     await worker.start()
-
+ 
     if not scheduler.is_scheduler_enabled():
         logger.info("Scheduler disabled by OPENCMO_ENABLE_SCHEDULER; timed monitors will remain inactive.")
         return
-
+ 
     if not scheduler.is_scheduler_available():
         logger.info("APScheduler not installed; scheduled monitors will remain inactive.")
         return
-
+ 
     loaded_jobs = await scheduler.load_jobs_from_db()
     scheduler.start_scheduler()
     logger.info("Scheduler started with %d enabled monitor job(s)", loaded_jobs)
-
-
+ 
+ 
 @app.on_event("shutdown")
 async def _shutdown_runtime_services():
     """Stop optional runtime services cleanly."""
     from opencmo import scheduler
     from opencmo.background.worker import get_background_worker
-
+ 
     await get_background_worker().stop()
     scheduler.stop_scheduler()
     logger.info("Scheduler stopped")
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # BYOK middleware — per-user API key isolation
 # ---------------------------------------------------------------------------
-
+ 
 # Keys that can be injected from the X-User-Keys header
 _INJECTABLE_KEYS = frozenset({
     "OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENCMO_MODEL_DEFAULT",
     "TAVILY_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_AI_API_KEY",
     "PAGESPEED_API_KEY",
 })
-
-
+ 
+ 
 @app.middleware("http")
 async def canonical_host_middleware(request: Request, call_next):
     """Redirect production traffic to the canonical public host."""
@@ -1050,12 +1047,12 @@ async def canonical_host_middleware(request: Request, call_next):
         target_url = request.url.replace(scheme=scheme, netloc=redirect_host)
         return RedirectResponse(str(target_url), status_code=308)
     return await call_next(request)
-
-
+ 
+ 
 @app.middleware("http")
 async def byok_middleware(request: Request, call_next):
     """Read per-user API keys from X-User-Keys header and inject via ContextVar.
-
+ 
     Uses ContextVar instead of os.environ for per-request key isolation,
     preventing race conditions where concurrent requests could overwrite
     each other's API keys.
@@ -1063,16 +1060,16 @@ async def byok_middleware(request: Request, call_next):
     raw = request.headers.get("X-User-Keys")
     if not raw:
         return await call_next(request)
-
+ 
     import base64
     import json as _json
-
+ 
     try:
         decoded = base64.b64decode(raw).decode()
         user_keys: dict = _json.loads(decoded)
     except Exception:
         return await call_next(request)
-
+ 
     # Filter to allowed keys only
     filtered = {
         k: v for k, v in user_keys.items()
@@ -1080,7 +1077,7 @@ async def byok_middleware(request: Request, call_next):
     }
     if not filtered:
         return await call_next(request)
-
+ 
     # Inject into ContextVar (Task-local, no race condition)
     from opencmo import llm
     token = llm.set_request_keys(filtered)
@@ -1088,24 +1085,24 @@ async def byok_middleware(request: Request, call_next):
         response = await call_next(request)
     finally:
         llm.reset_request_keys(token)
-
+ 
     return response
-
-
+ 
+ 
 @app.get("/api/v1/health")
 async def api_v1_health():
     from opencmo import scheduler
-
+ 
     return JSONResponse({
         "ok": True,
         "scheduler": scheduler.scheduler_status(),
     })
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # Include domain routers
 # ---------------------------------------------------------------------------
-
+ 
 from opencmo.web.routers.approvals import router as approvals_router
 from opencmo.web.routers.brand_kit import router as brand_kit_router
 from opencmo.web.routers.campaigns import router as campaigns_router
@@ -1124,7 +1121,7 @@ from opencmo.web.routers.report import router as report_router
 from opencmo.web.routers.settings import router as settings_router
 from opencmo.web.routers.site import router as site_router
 from opencmo.web.routers.tasks import router as tasks_router
-
+ 
 app.include_router(legacy_router, prefix="/legacy")
 app.include_router(projects_router)
 app.include_router(graph_router)
@@ -1143,13 +1140,13 @@ app.include_router(brand_kit_router)
 app.include_router(performance_router)
 app.include_router(quick_actions_router)
 app.include_router(github_router)
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # SPA mount — /app/ serves React frontend
 # ---------------------------------------------------------------------------
-
-
+ 
+ 
 @app.get("/")
 @app.head("/")
 @app.get("/{full_path:path}")
@@ -1169,7 +1166,7 @@ async def spa_catchall(request: Request, full_path: str = ""):
             import mimetypes
             ct = mimetypes.guess_type(str(asset))[0] or "application/octet-stream"
             return StreamingResponse(open(asset, "rb"), media_type=ct)
-
+ 
     new_visitor_id: str | None = None
     try:
         await storage.increment_site_counter("total_visits")
@@ -1178,9 +1175,9 @@ async def spa_catchall(request: Request, full_path: str = ""):
             await storage.increment_site_counter("unique_visitors")
     except Exception:
         logger.exception("Failed to record site visit counters")
-
+ 
     rendered_html = _apply_public_route_metadata(index.read_text(), full_path)
-
+ 
     # SPA fallback — always return index.html
     response = HTMLResponse(rendered_html)
     if _is_app_surface(full_path):
@@ -1195,16 +1192,16 @@ async def spa_catchall(request: Request, full_path: str = ""):
             secure=request.url.scheme == "https",
         )
     return response
-
-
+ 
+ 
 # ---------------------------------------------------------------------------
 # Server entry point
 # ---------------------------------------------------------------------------
-
-
+ 
+ 
 def run_server(port: int = 8080):
     import uvicorn
-
+ 
     load_dotenv()
     host = os.environ.get("OPENCMO_WEB_HOST", "127.0.0.1")
     uvicorn.run(app, host=host, port=port)
