@@ -28,17 +28,10 @@ _SPA_DIR = Path(os.environ.get("OPENCMO_SPA_DIR", str(_HERE.parent.parent.parent
 
 app = FastAPI(title="OpenCMO Dashboard")
 app.mount("/static", StaticFiles(directory=str(_HERE / "static")), name="static")
-from fastapi.staticfiles import StaticFiles as _SF
-import os as _os
-_dist = Path(_os.environ.get("OPENCMO_SPA_DIR", str(_HERE.parent.parent.parent / "frontend" / "dist")))
-if (_dist / "assets").exists():
-    app.mount("/assets", _SF(directory=str(_dist / "assets")), name="spa-assets")
+_dist = Path(os.environ.get("OPENCMO_SPA_DIR", str(_HERE.parent.parent.parent / "frontend" / "dist")))
+if _dist.exists():
+    app.mount("/assets", StaticFiles(directory=str(_dist / "assets")), name="spa-assets")
 logger = logging.getLogger(__name__)
-
-_SEO_PUBLIC_LOCALES = ("en", "zh")
-_HREFLANG_BY_LOCALE = {
-    "en": "en",
-    "zh": "zh-CN",
 }
 
 _HOME_STATIC_SITE_COPY_BY_LOCALE = {
